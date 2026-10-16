@@ -5,6 +5,7 @@ from core.views import dashboard, home, health
 urlpatterns = [
     path("", home, name="home"),
     path("", include("accounts.urls")),
+    path("", include("fleet.urls")),
     path("dashboard/", dashboard, name="dashboard"),
     path("health/", health, name="health"),
     path("admin/", admin.site.urls),

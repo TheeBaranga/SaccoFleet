@@ -1,22 +1,21 @@
-{% extends 'base.html' %}
+{% extends 'app.html' %}
 {% block title %}Dashboard | Sacco Fleet{% endblock %}
-{% block content %}
-<div class="app-layout">
-  <aside class="sidebar">
-    {% include 'brand.html' %}
-    <nav aria-label="Main navigation"><a href="{% url 'dashboard' %}" aria-current="page">Dashboard</a></nav>
-    <div class="profile">
-      <p>{{ request.user.email }}</p>
-      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="link-button">Sign out</button></form>
-    </div>
-  </aside>
-  <main class="dashboard">
-    <h1>Dashboard</h1>
-    <p class="subtitle">Your fleet, in one place.</p>
-    <section class="welcome-panel" aria-labelledby="welcome-title">
-      <h2 id="welcome-title">Welcome{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h2>
-      <p>You’re signed in. Fleet records will appear here once added.</p>
-    </section>
-  </main>
+{% block page_content %}
+<header class="page-heading">
+  <div><h1>Dashboard</h1><p class="subtitle">A quick look at your fleet today.</p></div>
+  <time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:"l, j F" }}</time>
+</header>
+<div class="page-actions">
+  <a class="primary action-link" href="{% url 'add_vehicle' %}">+ Add vehicle</a>
+  <a class="secondary action-link" href="{% url 'record_collection' %}">Record collection</a>
 </div>
+<dl class="stats" aria-label="Fleet summary">
+  <div class="stat"><dt>Total vehicles</dt><dd>{{ total_vehicles }}</dd></div>
+  <div class="stat"><dt>Active vehicles</dt><dd>{{ active_vehicles }}</dd></div>
+  <div class="stat"><dt>Today’s collections</dt><dd>KSh {{ todays_collections }}</dd></div>
+</dl>
+<section class="table-panel" aria-labelledby="vehicle-status-heading">
+  <div class="panel-heading"><h2 id="vehicle-status-heading">Vehicle status</h2><a href="{% url 'vehicles' %}">View all vehicles <span aria-hidden="true">→</span></a></div>
+  {% include 'fleet/vehicle_table.html' with dashboard_table=True %}
+</section>
 {% endblock %}

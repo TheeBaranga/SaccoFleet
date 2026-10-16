@@ -1,0 +1,18 @@
+{% extends 'app.html' %}
+{% block title %}Vehicles | Sacco Fleet{% endblock %}
+{% block page_content %}
+<header class="page-heading"><div><h1>Vehicles</h1><p class="subtitle">Your fleet, in one place.</p></div><a class="primary action-link" href="{% url 'add_vehicle' %}">+ Add vehicle</a></header>
+<form class="search-form" method="get" action="{% url 'vehicles' %}">
+  <label class="visually-hidden" for="vehicle-search">Search vehicles</label>
+  <input id="vehicle-search" type="search" name="q" value="{{ query }}" placeholder="Search registration, driver or route" maxlength="100">
+  <button class="secondary" type="submit">Search</button>
+</form>
+<div class="table-panel">{% include 'fleet/vehicle_table.html' with vehicles=page_obj.object_list %}</div>
+{% if page_obj.has_other_pages %}
+<nav class="pagination" aria-label="Vehicle pages">
+  {% if page_obj.has_previous %}<a href="?q={{ query|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a href="?q={{ query|urlencode }}&amp;page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

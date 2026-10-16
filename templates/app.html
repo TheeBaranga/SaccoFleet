@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    {% include 'brand.html' %}
+    <nav aria-label="Main navigation">
+      <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'record_collection' %}aria-current="page"{% endif %}>Dashboard</a>
+      <a href="{% url 'vehicles' %}" {% if request.resolver_match.url_name == 'vehicles' or request.resolver_match.url_name == 'add_vehicle' %}aria-current="page"{% endif %}>Vehicles</a>
+    </nav>
+    <div class="profile">
+      <p>{{ request.user.email }}</p>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="link-button">Sign out</button></form>
+    </div>
+  </aside>
+  <main class="dashboard">
+    {% if messages %}<div class="messages" role="status">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>{% endif %}
+    {% block page_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

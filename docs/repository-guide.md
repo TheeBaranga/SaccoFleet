@@ -2,6 +2,17 @@
 
 Saccofleet is one Django application. Python handles authentication and data access on the server; Django templates and CSS produce the pages in the browser. SQLite stores local development data. DATABASE_URL can select PostgreSQL for a future deployment. No separate frontend framework or JavaScript build is required for this step.
 
+## How the dashboard works
+
+1. `/dashboard/` requires an authenticated session.
+2. `core/views.py` filters vehicles to the fleet owned by the signed-in user.
+3. It counts all those vehicles and the subset whose status is Active.
+4. It sums that owner’s vehicle collections for the current Africa/Nairobi date.
+5. The template displays the three totals and the first five vehicles, ordered by registration. Empty fleets show zero totals and a useful empty state.
+6. Add vehicle and Record collection forms use explicit allowed fields and enforce ownership on the server. Posted fleet IDs are ignored, and a collection’s vehicle choices are restricted to the owner’s fleet.
+7. Vehicle registrations are normalized to uppercase without whitespace and must be unique within a fleet. Collections use positive whole Kenyan shillings, and future dates are rejected by forms and model validation.
+8. View all vehicles opens a searchable list with twenty records per page. Editing and individual vehicle details are a later step.
+
 ## How sign in works step by step
 
 1. The browser requests `/login/`. `config/urls.py` includes the routes in `accounts/urls.py`.
@@ -62,12 +73,31 @@ Saccofleet is one Django application. Python handles authentication and data acc
 | --- | --- |
 | `core/__init__.py` | Marks core as a Python package. |
 | `core/apps.py` | Registers the shared-pages application. |
-| `core/views.py` | Sends signed-out home-page visitors to login and signed-in visitors to the dashboard. Protects the dashboard and serves the basic process health endpoint. |
+| `core/views.py` | Redirects home-page visitors, protects the dashboard, calculates owner-scoped totals using Kenya’s current date, and serves the process health endpoint. |
 | `core/tests.py` | Tests home redirects, protected dashboard access, health output and admin login requirements. |
-| `core/templates/core/dashboard.html` | A protected welcome page with the signed-in email and POST sign-out form. It does not show invented vehicle totals. |
+| `core/templates/core/dashboard.html` | Shows total vehicles, active vehicles, today’s recorded collections, the first five vehicles and entry actions. It extends the shared app shell. |
 | `core/static/core/app.css` | Styles the login and dashboard shell, including the approved colors, form spacing, responsive layouts, focus indicators and errors. |
 | `templates/base.html` | Shared HTML document structure, page titles, viewport settings and CSS loading. Other page templates extend it. |
-| `templates/brand.html` | Reusable Sacco Fleet wordmark and bus icon, included on both screens. |
+| `templates/brand.html` | Reusable Sacco Fleet wordmark and bus icon, included on the login and app screens. |
+| `templates/app.html` | Shared signed-in layout with Dashboard and Vehicles navigation, the user’s email, success messages and POST sign-out. |
+
+## Fleet data and entry forms
+
+| File | Purpose |
+| --- | --- |
+| `fleet/__init__.py` | Marks fleet as a Python package. |
+| `fleet/apps.py` | Registers the fleet application with Django. |
+| `fleet/models.py` | Defines Fleet, Vehicle and Collection. Adds registration uniqueness, status, capacity and amount constraints, and service date validation. |
+| `fleet/forms.py` | Defines the vehicle and collection forms. Validates registrations and limits collection vehicle choices to the signed-in owner’s fleet. |
+| `fleet/views.py` | Handles the searchable vehicle list and the two entry forms. Assigns ownership on the server and redirects after successful submissions. |
+| `fleet/urls.py` | Maps `/vehicles/`, `/vehicles/add/` and `/collections/add/` to their views. |
+| `fleet/admin.py` | Registers fleets, vehicles and collections for staff who have the appropriate Django administration permissions. |
+| `fleet/tests.py` | Tests dashboard totals, the Kenya date boundary, data isolation, entry validation, CSRF protection, registration uniqueness, search and pagination. |
+| `fleet/migrations/__init__.py` | Marks the fleet migration directory as a Python package. |
+| `fleet/migrations/0001_initial.py` | Creates the three fleet tables, relationships and database constraints. Does not seed user records. |
+| `fleet/templates/fleet/vehicle_table.html` | Reusable status table, status labels and empty/search states used by the dashboard and full vehicle list. |
+| `fleet/templates/fleet/vehicles.html` | Search form, paginated vehicle list and Add vehicle link inside the app layout. |
+| `fleet/templates/fleet/form.html` | Shared entry form layout with labels, validation errors, save/cancel actions and a prompt to add a vehicle before recording a collection. |
 
 ## Documentation
 
@@ -89,4 +119,4 @@ The original development placeholder `core/templates/core/home.html` was removed
 
 ## Current limits
 
-Accounts are created by an administrator using `createsuperuser` or Django admin; public registration is not included. Only email login is supported. Password recovery currently directs users to their Sacco administrator; no email reset service is configured. Fleet models and the full dashboard are the next development step. The customer `/login/` route is throttled; the built-in `/admin/login/` route needs its own production access restriction or throttling before public deployment. The application is still local development software, with deployment configuration and operational checks to follow.
+Accounts are created by an administrator using `createsuperuser` or Django admin; public registration is not included. Only email login is supported. Password recovery currently directs users to their Sacco administrator; no email reset service is configured. Each account currently owns one fleet. Vehicle listing and creation, collection entry and dashboard totals are implemented. Vehicle editing, individual vehicle details and multi-user fleet membership are future steps. The customer `/login/` route is throttled; the built-in `/admin/login/` route needs its own production access restriction or throttling before public deployment. The application is still local development software, with deployment configuration and operational checks to follow.

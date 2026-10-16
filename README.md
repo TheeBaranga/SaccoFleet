@@ -2,9 +2,9 @@
 
 A simple Sacco fleet management application based on the approved Login, Dashboard, Vehicles and Vehicle details designs.
 
-## Current step authentication
+## Current step dashboard
 
-The approved login screen now uses real email and password authentication. Sign-in creates a Django session, the dashboard requires login, and sign-out uses a CSRF-protected POST. Fleet records and the full dashboard are the next step.
+The approved login screen now uses real email and password authentication. Sign-in creates a Django session, the dashboard requires login, and sign-out uses a CSRF-protected POST. The dashboard shows real fleet totals, active vehicles, today’s recorded collections and a five-vehicle status preview. Add vehicle and Record collection forms populate it.
 
 ### Requirements
 
@@ -40,7 +40,8 @@ python manage.py test
 
 - `config/`: application settings, URL routing and server entry points.
 - `accounts/`: custom email based user model, administration and initial migration.
-- `core/`: protected dashboard, shared CSS, health check and tests.
+- `core/`: protected dashboard totals, shared CSS, health check and tests.
+- `fleet/`: fleet, vehicle and collection models, entry forms, searchable list and ownership checks.
 - `docs/scope.md`: agreed screens and data rules.
 - `.env.example`: configuration names; copy to an ignored `.env` for local overrides.
 - `requirements.txt`: exact dependency versions used for this setup.
@@ -53,10 +54,18 @@ Five failed attempts for an email address or twenty for an IP address within ten
 
 See [the repository guide](docs/repository-guide.md) for a step-by-step request flow and an explanation of every file.
 
+## Using the dashboard
+
+After signing in, open `/dashboard/`. New accounts have zero totals and no sample vehicles. Add your first vehicle using **Add vehicle**, then record collections using **Record collection**. Today’s collections sum positive whole Kenyan shillings for the current Africa/Nairobi date. Historical entries are saved but excluded from today’s total. Vehicle status is entered manually; Active is not live GPS tracking.
+
+The dashboard shows the first five registrations alphabetically. **View all vehicles** opens a searchable list, paginated at twenty vehicles per page. Each account currently owns one fleet, and customer pages only read and write that owner’s records. Refresh the page to see newly recorded data; no live-update service is included.
+
+After updating the code, apply `python manage.py migrate` and restart any server started with `--noreload`. Tests run with `python manage.py test`.
+
 ## Next steps
 
-1. Add fleet ownership, vehicle records, search, create and edit forms.
-2. Add maintenance information and recorded collections for dashboard totals.
+1. Add individual vehicle details and editing.
+2. Add collection history and corrections.
 3. Configure password recovery email, deployment and production security checks.
 
 ## Deployment configuration
