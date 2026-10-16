@@ -2,9 +2,9 @@
 
 A simple Sacco fleet management application based on the approved Login, Dashboard, Vehicles and Vehicle details designs.
 
-## Step 1 foundation
+## Current step authentication
 
-This first step sets up Django, the database, email based user accounts, the Django administration interface, and automated checks. The customer login screen and fleet features are not implemented yet.
+The approved login screen now uses real email and password authentication. Sign-in creates a Django session, the dashboard requires login, and sign-out uses a CSRF-protected POST. Fleet records and the full dashboard are the next step.
 
 ### Requirements
 
@@ -24,7 +24,9 @@ python manage.py runserver 127.0.0.1:8000
 
 Choose your own administrator email and password when prompted. There are no default credentials or sample fleet records.
 
-Open http://127.0.0.1:8000/ for the development page, /admin/ for administration, and /health/ for a basic process health check. The health endpoint does not test database connectivity.
+Open http://127.0.0.1:8000/login/ and use the account you created. Successful sign-in opens /dashboard/. The root page redirects according to your sign-in state. /admin/ is for staff administration; /health/ is a basic process health check, not a database readiness check.
+
+The login form accepts email addresses only. Forgot password shows administrator recovery instructions; email-based recovery and public registration are not included yet.
 
 ### Check the project
 
@@ -38,19 +40,24 @@ python manage.py test
 
 - `config/`: application settings, URL routing and server entry points.
 - `accounts/`: custom email based user model, administration and initial migration.
-- `core/`: development page, health check and tests.
+- `core/`: protected dashboard, shared CSS, health check and tests.
 - `docs/scope.md`: agreed screens and data rules.
 - `.env.example`: configuration names; copy to an ignored `.env` for local overrides.
 - `requirements.txt`: exact dependency versions used for this setup.
 
 The custom user model is created before the first database migration so email login can be added without replacing Django's default user table later. Passwords are hashed by Django.
 
+## Authentication behavior
+
+Five failed attempts for an email address or twenty for an IP address within ten minutes pause customer sign-in for ten minutes. Counters are stored in the database and use keyed hashes for their identifiers. Successful sign-ins do not count as failures. Run `python manage.py prune_login_buckets` daily in production to remove expired counters. The admin login route is separate and needs its own production access restriction or throttling.
+
+See [the repository guide](docs/repository-guide.md) for a step-by-step request flow and an explanation of every file.
+
 ## Next steps
 
-1. Build the approved login screen, sign out and protected dashboard, including login throttling.
-2. Add fleet ownership, vehicle records, search, create and edit forms.
-3. Add maintenance information and recorded collections for dashboard totals.
-4. Configure password recovery email, deployment and production security checks.
+1. Add fleet ownership, vehicle records, search, create and edit forms.
+2. Add maintenance information and recorded collections for dashboard totals.
+3. Configure password recovery email, deployment and production security checks.
 
 ## Deployment configuration
 

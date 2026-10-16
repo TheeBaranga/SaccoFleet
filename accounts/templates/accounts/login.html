@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Sign in | Sacco Fleet{% endblock %}
+{% block content %}
+<main class="login-layout">
+  <section class="login-form" aria-labelledby="login-title">
+    {% include 'brand.html' %}
+    <h1 id="login-title">Welcome back</h1>
+    <p class="subtitle">Sign in to manage your fleet.</p>
+    {% if throttled %}
+      <p class="alert" role="alert">Too many sign-in attempts. Please wait 10 minutes and try again.</p>
+    {% elif form.non_field_errors %}
+      <div class="alert" role="alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <form method="post" action="{% url 'login' %}" novalidate>
+      {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      <div class="field">
+        <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="field-error" id="id_username_error" role="alert">{{ form.username.errors }}</div>{% endif %}
+      </div>
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="field-error" id="id_password_error" role="alert">{{ form.password.errors }}</div>{% endif %}
+      </div>
+      <details class="recovery">
+        <summary>Forgot password?</summary>
+        <p>Contact your Sacco administrator to reset your password.</p>
+      </details>
+      <button class="primary sign-in" type="submit">Sign in</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

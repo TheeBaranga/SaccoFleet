@@ -37,3 +37,11 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+class LoginBucket(models.Model):
+    """Short-lived login counters shared by all application processes."""
+
+    key = models.CharField(max_length=64, primary_key=True)
+    attempts = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField()
