@@ -4,7 +4,7 @@
     <thead><tr><th scope="col">Registration</th><th scope="col">Driver</th><th scope="col">Route</th><th scope="col">Status</th></tr></thead>
     <tbody>
       {% for vehicle in vehicles %}
-      <tr><th scope="row">{{ vehicle.registration }}</th><td>{{ vehicle.driver|default:"Unassigned" }}</td><td>{{ vehicle.route|default:"Unassigned" }}</td><td><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></td></tr>
+      <tr><th scope="row"><a href="{% url 'vehicle_detail' vehicle.pk %}">{{ vehicle.registration }}</a></th><td>{{ vehicle.driver|default:"Unassigned" }}</td><td>{{ vehicle.route|default:"Unassigned" }}</td><td><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></td></tr>
       {% empty %}
       <tr><td colspan="4" class="empty-state">
         {% if query %}<h3>No vehicles found</h3><p>Try another registration, driver or route.</p><a href="{% url 'vehicles' %}">Clear search</a>

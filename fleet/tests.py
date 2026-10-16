@@ -177,6 +177,45 @@ class FleetDashboardTests(TestCase):
         self.assertTrue(response.context["form"].is_bound)
         self.assertIn("registration", response.context["form"].errors)
 
+    def edit_data(self, **overrides):
+        data = {"registration": "KDA284K", "driver": "James Mwangi", "route": "Town – Westlands", "status": "active", "capacity": 14, "last_service": "2026-09-20", "next_service": "2026-11-20"}
+        data.update(overrides)
+        return data
+
+    def test_vehicle_details_show_basic_information_and_maintenance(self):
+        vehicle = self.vehicle(driver="James Mwangi", route="Town – Westlands", status=Vehicle.Status.ACTIVE, capacity=14, last_service=date(2026, 9, 20), next_service=date(2026, 11, 20))
+        response = self.client.get(reverse("vehicle_detail", args=[vehicle.pk]))
+        for text in ("KDA284K", "Active", "James Mwangi", "Town – Westlands", "14 passengers", "20 September 2026", "20 November 2026"):
+            self.assertContains(response, text)
+        self.assertContains(response, reverse("edit_vehicle", args=[vehicle.pk]))
+        self.assertIn("no-store", response["Cache-Control"])
+
+    def test_other_fleets_vehicles_cannot_be_read_or_edited(self):
+        other = Vehicle.objects.create(fleet=self.other_fleet, registration="OTHER999", driver="Other driver")
+        self.assertEqual(self.client.get(reverse("vehicle_detail", args=[other.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("edit_vehicle", args=[other.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("edit_vehicle", args=[other.pk]), self.edit_data(registration="STOLEN1")).status_code, 404)
+        other.refresh_from_db()
+        self.assertEqual((other.registration, other.driver, other.fleet), ("OTHER999", "Other driver", self.other_fleet))
+
+    def test_editing_vehicle_saves_changes_and_keeps_ownership(self):
+        vehicle = self.vehicle()
+        response = self.client.post(reverse("edit_vehicle", args=[vehicle.pk]), self.edit_data(registration="kda 285k", status="maintenance", fleet=self.other_fleet.pk))
+        self.assertRedirects(response, reverse("vehicle_detail", args=[vehicle.pk]))
+        vehicle.refresh_from_db()
+        self.assertEqual((vehicle.registration, vehicle.status, vehicle.driver, vehicle.fleet), ("KDA285K", "maintenance", "James Mwangi", self.fleet))
+        self.assertEqual(vehicle.next_service, date(2026, 11, 20))
+
+    def test_editing_to_existing_registration_is_rejected(self):
+        self.vehicle("KCB719P")
+        vehicle = self.vehicle()
+        response = self.client.post(reverse("edit_vehicle", args=[vehicle.pk]), self.edit_data(registration="kcb 719p"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This registration is already in your fleet.")
+        self.assertContains(response, "Edit KDA284K")
+        vehicle.refresh_from_db()
+        self.assertEqual(vehicle.registration, "KDA284K")
+
 
 class NewFleetTests(TestCase):
     def test_reading_dashboard_does_not_create_records_and_first_vehicle_sets_up_fleet(self):

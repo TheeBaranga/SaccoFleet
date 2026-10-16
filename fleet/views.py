@@ -2,8 +2,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
 from django.db.models import Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
+from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from .forms import CollectionForm, VehicleForm
@@ -42,7 +43,29 @@ def add_vehicle(request):
         else:
             messages.success(request, f"{vehicle.registration} was added to your fleet.")
             return redirect("dashboard")
-    return render(request, "fleet/form.html", {"form": form, "heading": "Add vehicle", "description": "Add a vehicle to your fleet.", "button_label": "Save vehicle", "nav_section": "vehicles"})
+    return render(request, "fleet/form.html", {"form": form, "heading": "Add vehicle", "description": "Add a vehicle to your fleet.", "button_label": "Save vehicle", "nav_section": "vehicles", "cancel_url": reverse("vehicles"), "back_label": "Back to vehicles"})
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET"])
+def vehicle_detail(request, pk):
+    vehicle = get_object_or_404(Vehicle, pk=pk, fleet__owner=request.user)
+    return render(request, "fleet/vehicle_detail.html", {"vehicle": vehicle})
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET", "POST"])
+def edit_vehicle(request, pk):
+    vehicle = get_object_or_404(Vehicle, pk=pk, fleet__owner=request.user)
+    registration = vehicle.registration
+    form = VehicleForm(request.POST if request.method == "POST" else None, instance=vehicle, owner=request.user)
+    if request.method == "POST" and form.is_valid():
+        vehicle = form.save()
+        messages.success(request, f"{vehicle.registration} was updated.")
+        return redirect("vehicle_detail", pk=pk)
+    return render(request, "fleet/form.html", {"form": form, "heading": f"Edit {registration}", "description": "Update this vehicle’s details.", "button_label": "Save changes", "cancel_url": reverse("vehicle_detail", args=[pk]), "back_label": "Back to vehicle"})
 
 
 @never_cache
@@ -55,4 +78,4 @@ def record_collection(request):
         form.save()
         messages.success(request, "Collection recorded.")
         return redirect("dashboard")
-    return render(request, "fleet/form.html", {"form": form, "heading": "Record collection", "description": "Record a vehicle’s collections in whole Kenyan shillings.", "button_label": "Save collection", "no_vehicles": not has_vehicles})
+    return render(request, "fleet/form.html", {"form": form, "heading": "Record collection", "description": "Record a vehicle’s collections in whole Kenyan shillings.", "button_label": "Save collection", "no_vehicles": not has_vehicles, "cancel_url": reverse("dashboard"), "back_label": "Back to dashboard"})

@@ -21,7 +21,8 @@ class VehicleForm(forms.ModelForm):
 
     def clean_registration(self):
         registration = normalize_registration(self.cleaned_data["registration"])
-        if Vehicle.objects.filter(fleet__owner=self.owner, registration__iexact=registration).exists():
+        duplicates = Vehicle.objects.filter(fleet__owner=self.owner, registration__iexact=registration).exclude(pk=self.instance.pk)
+        if duplicates.exists():
             raise forms.ValidationError("This registration is already in your fleet.")
         return registration
 

@@ -60,13 +60,14 @@ After signing in, open `/dashboard/`. New accounts have zero totals and no sampl
 
 The dashboard shows the first five registrations alphabetically. **View all vehicles** opens a searchable list, paginated at twenty vehicles per page. Each account currently owns one fleet, and customer pages only read and write that owner’s records. Refresh the page to see newly recorded data; no live-update service is included.
 
+Click a registration in any vehicle table to open its details page, showing the driver, route, capacity and service dates. **Edit vehicle** on that page updates those details.
+
 After updating the code, apply `python manage.py migrate` and restart any server started with `--noreload`. Tests run with `python manage.py test`.
 
 ## Next steps
 
-1. Add individual vehicle details and editing.
-2. Add collection history and corrections.
-3. Configure password recovery email, deployment and production security checks.
+1. Add collection history and corrections.
+2. Configure password recovery email, deployment and production security checks.
 
 ## Deployment configuration
 

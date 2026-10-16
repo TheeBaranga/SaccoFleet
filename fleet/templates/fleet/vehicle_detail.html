@@ -1,0 +1,25 @@
+{% extends 'app.html' %}
+{% block title %}{{ vehicle.registration }} | Sacco Fleet{% endblock %}
+{% block page_content %}
+<a class="back-link" href="{% url 'vehicles' %}">← Back to vehicles</a>
+<header class="page-heading">
+  <div class="title-row"><h1>{{ vehicle.registration }}</h1><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></div>
+  <a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a>
+</header>
+<section class="detail-panel" aria-labelledby="basic-heading">
+  <h2 id="basic-heading">Basic information</h2>
+  <dl class="detail-grid">
+    <div><dt>Registration</dt><dd>{{ vehicle.registration }}</dd></div>
+    <div><dt>Assigned driver</dt><dd>{{ vehicle.driver|default:"Unassigned" }}</dd></div>
+    <div><dt>Route</dt><dd>{{ vehicle.route|default:"Unassigned" }}</dd></div>
+    <div><dt>Capacity</dt><dd>{{ vehicle.capacity }} passenger{{ vehicle.capacity|pluralize }}</dd></div>
+  </dl>
+</section>
+<section class="detail-panel" aria-labelledby="maintenance-heading">
+  <h2 id="maintenance-heading">Maintenance</h2>
+  <dl class="detail-grid">
+    <div><dt>Last service</dt><dd>{% if vehicle.last_service %}<time datetime="{{ vehicle.last_service|date:'Y-m-d' }}">{{ vehicle.last_service|date:"j F Y" }}</time>{% else %}Not recorded{% endif %}</dd></div>
+    <div><dt>Next service</dt><dd>{% if vehicle.next_service %}<time datetime="{{ vehicle.next_service|date:'Y-m-d' }}">{{ vehicle.next_service|date:"j F Y" }}</time>{% else %}Not scheduled{% endif %}</dd></div>
+  </dl>
+</section>
+{% endblock %}
