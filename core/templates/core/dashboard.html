@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | Sacco Fleet{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    {% include 'brand.html' %}
+    <nav aria-label="Main navigation"><a href="{% url 'dashboard' %}" aria-current="page">Dashboard</a></nav>
+    <div class="profile">
+      <p>{{ request.user.email }}</p>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="link-button">Sign out</button></form>
+    </div>
+  </aside>
+  <main class="dashboard">
+    <h1>Dashboard</h1>
+    <p class="subtitle">Your fleet, in one place.</p>
+    <section class="welcome-panel" aria-labelledby="welcome-title">
+      <h2 id="welcome-title">Welcome{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h2>
+      <p>You’re signed in. Fleet records will appear here once added.</p>
+    </section>
+  </main>
+</div>
+{% endblock %}
