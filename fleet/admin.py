@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Collection, Fleet, Vehicle
+from .models import Collection, Expense, Fleet, Vehicle
 
 
 @admin.register(Fleet)
@@ -19,4 +19,11 @@ class VehicleAdmin(admin.ModelAdmin):
 class CollectionAdmin(admin.ModelAdmin):
     list_display = ("vehicle", "amount", "date")
     list_filter = ("date",)
+    autocomplete_fields = ("vehicle",)
+
+
+@admin.register(Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    list_display = ("vehicle", "category", "amount", "date")
+    list_filter = ("category", "date")
     autocomplete_fields = ("vehicle",)

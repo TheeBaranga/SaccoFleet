@@ -7,12 +7,13 @@
 <div class="table-panel">
   <div class="table-scroll">
     <table>
-      <thead><tr><th scope="col">Date</th><th scope="col">Vehicle</th><th scope="col">Amount</th></tr></thead>
+      <thead><tr><th scope="col">Date</th><th scope="col">Vehicle</th><th scope="col">Amount</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
       <tbody>
         {% for collection in page_obj %}
-        <tr><td>{{ collection.date|date:"j M Y" }}</td><th scope="row"><a href="{% url 'vehicle_detail' collection.vehicle.pk %}">{{ collection.vehicle.registration }}</a></th><td>KSh {{ collection.amount|intcomma }}</td></tr>
+        <tr><td>{{ collection.date|date:"j M Y" }}</td><th scope="row"><a href="{% url 'vehicle_detail' collection.vehicle.pk %}">{{ collection.vehicle.registration }}</a></th><td>KSh {{ collection.amount|intcomma }}</td>
+          <td class="row-actions"><a href="{% url 'edit_collection' collection.pk %}">Edit</a> <a class="danger-link" href="{% url 'delete_collection' collection.pk %}">Delete</a></td></tr>
         {% empty %}
-        <tr><td colspan="3" class="empty-state"><h3>No collections yet</h3><p>Record a vehicle’s collection to see it here.</p><a href="{% url 'record_collection' %}">Record collection</a></td></tr>
+        <tr><td colspan="4" class="empty-state"><h3>No collections yet</h3><p>Record a vehicle’s collection to see it here.</p><a href="{% url 'record_collection' %}">Record collection</a></td></tr>
         {% endfor %}
       </tbody>
     </table>

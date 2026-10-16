@@ -5,7 +5,7 @@ from django.db import IntegrityError, transaction
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
-from .models import Collection, Fleet, Vehicle
+from .models import Collection, Expense, Fleet, Vehicle
 
 User = get_user_model()
 
@@ -236,6 +236,73 @@ class FleetDashboardTests(TestCase):
         response = self.client.get(reverse("maintenance"))
         self.assertEqual([v.registration for v in response.context["vehicles"]], ["KCF631R", "KCB719P"])
         self.assertContains(response, "Overdue")
+
+    def test_recording_expense_shows_on_expenses_page(self):
+        vehicle = self.vehicle()
+        response = self.client.post(reverse("add_expense"), {"vehicle": vehicle.pk, "category": "fuel", "amount": 4500, "date": timezone.localdate().isoformat(), "note": "Diesel"})
+        self.assertRedirects(response, reverse("expenses"))
+        response = self.client.get(reverse("expenses"))
+        self.assertContains(response, "Diesel")
+        self.assertEqual(response.context["total"], "4,500")
+
+    def test_expense_form_rejects_other_fleets_vehicle(self):
+        other = Vehicle.objects.create(fleet=self.other_fleet, registration="OTHER999")
+        response = self.client.post(reverse("add_expense"), {"vehicle": other.pk, "category": "fuel", "amount": 100, "date": timezone.localdate().isoformat()})
+        self.assertIn("vehicle", response.context["form"].errors)
+        self.assertFalse(Expense.objects.exists())
+
+    def test_editing_and_deleting_collection(self):
+        collection = Collection.objects.create(vehicle=self.vehicle(), amount=1000, date=date(2026, 10, 1))
+        response = self.client.post(reverse("edit_collection", args=[collection.pk]), {"vehicle": collection.vehicle.pk, "amount": 1500, "date": "2026-10-01"})
+        self.assertRedirects(response, reverse("collections"))
+        collection.refresh_from_db()
+        self.assertEqual(collection.amount, 1500)
+        self.assertContains(self.client.get(reverse("delete_collection", args=[collection.pk])), "Yes, delete")
+        self.client.post(reverse("delete_collection", args=[collection.pk]))
+        self.assertFalse(Collection.objects.exists())
+
+    def test_editing_and_deleting_expense(self):
+        expense = Expense.objects.create(vehicle=self.vehicle(), amount=1000, date=date(2026, 10, 1))
+        self.client.post(reverse("edit_expense", args=[expense.pk]), {"vehicle": expense.vehicle.pk, "category": "repairs", "amount": 2000, "date": "2026-10-01"})
+        expense.refresh_from_db()
+        self.assertEqual((expense.category, expense.amount), ("repairs", 2000))
+        self.client.post(reverse("delete_expense", args=[expense.pk]))
+        self.assertFalse(Expense.objects.exists())
+
+    def test_deleting_vehicle_removes_its_records(self):
+        vehicle = self.vehicle()
+        Collection.objects.create(vehicle=vehicle, amount=1000)
+        Expense.objects.create(vehicle=vehicle, amount=500)
+        self.assertContains(self.client.get(reverse("delete_vehicle", args=[vehicle.pk])), "1 collection(s) and 1 expense(s)")
+        response = self.client.post(reverse("delete_vehicle", args=[vehicle.pk]))
+        self.assertRedirects(response, reverse("vehicles"))
+        self.assertFalse(Vehicle.objects.filter(fleet=self.fleet).exists())
+        self.assertFalse(Collection.objects.exists() or Expense.objects.exists())
+
+    def test_other_fleets_records_cannot_be_edited_or_deleted(self):
+        other = Vehicle.objects.create(fleet=self.other_fleet, registration="OTHER999")
+        collection = Collection.objects.create(vehicle=other, amount=1000)
+        expense = Expense.objects.create(vehicle=other, amount=500)
+        for name, pk in (("delete_vehicle", other.pk), ("edit_collection", collection.pk), ("delete_collection", collection.pk), ("edit_expense", expense.pk), ("delete_expense", expense.pk)):
+            self.assertEqual(self.client.post(reverse(name, args=[pk])).status_code, 404)
+        self.assertTrue(Vehicle.objects.filter(pk=other.pk).exists() and Collection.objects.exists() and Expense.objects.exists())
+
+    def test_reports_show_profit_per_vehicle_and_last_seven_days(self):
+        today = timezone.localdate()
+        busy, quiet = self.vehicle(), self.vehicle("KCB719P")
+        Collection.objects.create(vehicle=busy, amount=10000, date=today)
+        Collection.objects.create(vehicle=busy, amount=5000, date=today - timedelta(days=30))
+        Expense.objects.create(vehicle=busy, amount=3000, date=today)
+        Expense.objects.create(vehicle=quiet, amount=2000, date=today)
+        other = Vehicle.objects.create(fleet=self.other_fleet, registration="OTHER999")
+        Collection.objects.create(vehicle=other, amount=99999, date=today)
+        response = self.client.get(reverse("reports"))
+        self.assertEqual((response.context["total_in"], response.context["total_out"], response.context["profit"]), (15000, 5000, 10000))
+        self.assertEqual([(r["vehicle"].registration, r["profit"]) for r in response.context["rows"]], [("KDA284K", 12000), ("KCB719P", -2000)])
+        chart = response.context["chart"]
+        self.assertEqual(len(chart), 7)
+        self.assertEqual((chart[-1]["day"], chart[-1]["collected"], chart[-1]["collected_pct"]), (today, 10000, 100))
+        self.assertNotContains(response, "OTHER999")
 
 
 class NewFleetTests(TestCase):

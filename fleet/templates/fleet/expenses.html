@@ -1,0 +1,29 @@
+{% extends 'app.html' %}
+{% load humanize %}
+{% block title %}Expenses | Sacco Fleet{% endblock %}
+{% block page_content %}
+<header class="page-heading"><div><h1>Expenses</h1><p class="subtitle">Fuel, repairs and other costs, newest first.</p></div><a class="primary action-link" href="{% url 'add_expense' %}">+ Record expense</a></header>
+<dl class="stats stats-single"><div class="stat"><dt>Total spent</dt><dd>KSh {{ total }}</dd></div></dl>
+<div class="table-panel">
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th scope="col">Date</th><th scope="col">Vehicle</th><th scope="col">Category</th><th scope="col">Note</th><th scope="col">Amount</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody>
+        {% for expense in page_obj %}
+        <tr><td>{{ expense.date|date:"j M Y" }}</td><th scope="row"><a href="{% url 'vehicle_detail' expense.vehicle.pk %}">{{ expense.vehicle.registration }}</a></th><td>{{ expense.get_category_display }}</td><td>{{ expense.note|default:"—" }}</td><td>KSh {{ expense.amount|intcomma }}</td>
+          <td class="row-actions"><a href="{% url 'edit_expense' expense.pk %}">Edit</a> <a class="danger-link" href="{% url 'delete_expense' expense.pk %}">Delete</a></td></tr>
+        {% empty %}
+        <tr><td colspan="6" class="empty-state"><h3>No expenses yet</h3><p>Record fuel, repairs or other costs to see them here.</p><a href="{% url 'add_expense' %}">Record expense</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% if page_obj.has_other_pages %}
+<nav class="pagination" aria-label="Expense pages">
+  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

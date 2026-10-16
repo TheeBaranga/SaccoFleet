@@ -1,0 +1,11 @@
+{% extends 'app.html' %}
+{% block title %}{{ heading }} | Sacco Fleet{% endblock %}
+{% block page_content %}
+<a class="back-link" href="{{ cancel_url }}">← Back</a>
+<form method="post" class="entry-panel">
+  {% csrf_token %}
+  <h1>{{ heading }}</h1>
+  <p class="subtitle">{{ warning }} This cannot be undone.</p>
+  <div class="page-actions"><button class="danger" type="submit">Yes, delete</button><a class="secondary action-link" href="{{ cancel_url }}">Cancel</a></div>
+</form>
+{% endblock %}

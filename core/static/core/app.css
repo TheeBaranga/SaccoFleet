@@ -107,3 +107,23 @@ tbody th a:hover{color:var(--green);text-decoration:underline}
 .detail-grid dd{margin:8px 0 0;font-size:16px;overflow-wrap:anywhere}
 @media(max-width:760px){.detail-panel{padding:20px}.detail-grid{grid-template-columns:1fr;gap:18px}}
 .stats-single{grid-template-columns:minmax(0,320px)}
+/* Edit and delete actions. */
+.row-actions{white-space:nowrap;text-align:right;font-size:14px}
+.row-actions a{margin-left:12px}
+.danger-link{color:var(--error)}
+.danger{background:var(--error);color:#fff;border:0;border-radius:6px;padding:12px 18px;min-height:44px;font-weight:500}
+.page-heading .page-actions{margin-bottom:0}
+/* Reports. */
+.chart-panel{margin-bottom:28px}
+.legend{margin:0;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.key{display:inline-block;width:12px;height:12px;border-radius:3px;margin-left:10px}
+.key-in,.bar-in{background:var(--green)}
+.key-out,.bar-out{background:#d9a441}
+.chart{list-style:none;margin:0;padding:0 20px 20px}
+.chart li{display:grid;grid-template-columns:110px 1fr;gap:16px;align-items:center;padding:10px 0;border-top:1px solid #e1e7e3}
+.chart-day{font-size:13px;color:var(--muted)}
+.chart-bars{display:grid;grid-template-columns:1fr 110px;gap:4px 10px;align-items:center}
+.bar{display:block;height:12px;border-radius:3px;min-width:2px}
+.bar-value{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.negative{color:var(--error)}
+@media(max-width:760px){.chart li{grid-template-columns:1fr;gap:6px}}

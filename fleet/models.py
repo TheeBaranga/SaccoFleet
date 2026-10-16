@@ -61,7 +61,7 @@ class Vehicle(models.Model):
 
 
 class Collection(models.Model):
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="collections")
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="collections")
     amount = models.PositiveIntegerField(validators=[MinValueValidator(1)], help_text="Amount in whole Kenyan shillings.")
     date = models.DateField(default=timezone.localdate, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -77,3 +77,29 @@ class Collection(models.Model):
 
     def __str__(self):
         return f"{self.vehicle} - KSh {self.amount}"
+
+
+class Expense(models.Model):
+    class Category(models.TextChoices):
+        FUEL = "fuel", "Fuel"
+        REPAIRS = "repairs", "Repairs"
+        INSURANCE = "insurance", "Insurance"
+        OTHER = "other", "Other"
+
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="expenses")
+    category = models.CharField(max_length=12, choices=Category.choices, default=Category.FUEL)
+    amount = models.PositiveIntegerField(validators=[MinValueValidator(1)], help_text="Amount in whole Kenyan shillings.")
+    date = models.DateField(default=timezone.localdate, db_index=True)
+    note = models.CharField(max_length=120, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+
+    def clean(self):
+        super().clean()
+        if self.date and self.date > timezone.localdate():
+            raise ValidationError({"date": "Expenses cannot be recorded for a future date."})
+
+    def __str__(self):
+        return f"{self.vehicle} - {self.get_category_display()} KSh {self.amount}"

@@ -4,7 +4,7 @@
 <a class="back-link" href="{% url 'vehicles' %}">← Back to vehicles</a>
 <header class="page-heading">
   <div class="title-row"><h1>{{ vehicle.registration }}</h1><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></div>
-  <a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a>
+  <div class="page-actions"><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a><a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Delete</a></div>
 </header>
 <section class="detail-panel" aria-labelledby="basic-heading">
   <h2 id="basic-heading">Basic information</h2>

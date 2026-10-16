@@ -1,5 +1,5 @@
 from django import forms
-from .models import Collection, Vehicle, normalize_registration
+from .models import Collection, Expense, Vehicle, normalize_registration
 
 
 class VehicleForm(forms.ModelForm):
@@ -33,6 +33,23 @@ class CollectionForm(forms.ModelForm):
         fields = ["vehicle", "amount", "date"]
         labels = {"amount": "Amount (KSh)", "date": "Collection date"}
         widgets = {"amount": forms.NumberInput(attrs={"min": 1, "step": 1}), "date": forms.DateInput(attrs={"type": "date"})}
+
+    def __init__(self, *args, owner, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["vehicle"].queryset = Vehicle.objects.filter(fleet__owner=owner)
+        self.fields["vehicle"].empty_label = "Choose a vehicle"
+
+
+class ExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ["vehicle", "category", "amount", "date", "note"]
+        labels = {"amount": "Amount (KSh)", "date": "Expense date"}
+        widgets = {
+            "amount": forms.NumberInput(attrs={"min": 1, "step": 1}),
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "note": forms.TextInput(attrs={"placeholder": "e.g. Brake pads"}),
+        }
 
     def __init__(self, *args, owner, **kwargs):
         super().__init__(*args, **kwargs)

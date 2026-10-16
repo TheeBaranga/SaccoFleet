@@ -64,12 +64,15 @@ Click a registration in any vehicle table to open its details page, showing the 
 
 **Collections** in the sidebar lists every recorded collection, newest first, with the total collected. **Maintenance** lists vehicles with a next service date, soonest first, marked Overdue, Due this week or Scheduled.
 
+**Expenses** records fuel, repairs, insurance and other costs per vehicle. **Reports** shows total collected, total expenses and profit, a bar chart of the last seven days, and profit for each vehicle.
+
+Collections and expenses can be edited or deleted from their lists. A vehicle can be deleted from its details page; this also deletes its collections and expenses, after a confirmation page.
+
 After updating the code, apply `python manage.py migrate` and restart any server started with `--noreload`. Tests run with `python manage.py test`.
 
 ## Next steps
 
-1. Add collection corrections.
-2. Configure password recovery email, deployment and production security checks.
+1. Configure password recovery email, deployment and production security checks.
 
 ## Deployment configuration
 

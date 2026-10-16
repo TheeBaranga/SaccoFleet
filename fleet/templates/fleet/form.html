@@ -4,7 +4,7 @@
 <a class="back-link" href="{{ cancel_url }}">← {{ back_label }}</a>
 <header class="page-heading"><div><h1>{{ heading }}</h1><p class="subtitle">{{ description }}</p></div></header>
 {% if no_vehicles %}
-<section class="entry-panel"><h2>Add a vehicle first</h2><p>A collection must belong to a vehicle in your fleet.</p><a class="primary action-link" href="{% url 'add_vehicle' %}">+ Add vehicle</a></section>
+<section class="entry-panel"><h2>Add a vehicle first</h2><p>Collections and expenses must belong to a vehicle in your fleet.</p><a class="primary action-link" href="{% url 'add_vehicle' %}">+ Add vehicle</a></section>
 {% else %}
 <form method="post" class="entry-panel" novalidate>
   {% csrf_token %}
