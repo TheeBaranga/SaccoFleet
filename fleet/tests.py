@@ -178,14 +178,14 @@ class FleetDashboardTests(TestCase):
         self.assertIn("registration", response.context["form"].errors)
 
     def edit_data(self, **overrides):
-        data = {"registration": "KDA284K", "driver": "James Mwangi", "route": "Town – Westlands", "status": "active", "capacity": 14, "last_service": "2026-09-20", "next_service": "2026-11-20"}
+        data = {"registration": "KDA284K", "make": "Toyota", "model": "Hiace", "driver": "James Mwangi", "route": "Town – Westlands", "status": "active", "capacity": 14, "last_service": "2026-09-20", "next_service": "2026-11-20"}
         data.update(overrides)
         return data
 
     def test_vehicle_details_show_basic_information_and_maintenance(self):
-        vehicle = self.vehicle(driver="James Mwangi", route="Town – Westlands", status=Vehicle.Status.ACTIVE, capacity=14, last_service=date(2026, 9, 20), next_service=date(2026, 11, 20))
+        vehicle = self.vehicle(make="Toyota", model="Hiace", driver="James Mwangi", route="Town – Westlands", status=Vehicle.Status.ACTIVE, capacity=14, last_service=date(2026, 9, 20), next_service=date(2026, 11, 20))
         response = self.client.get(reverse("vehicle_detail", args=[vehicle.pk]))
-        for text in ("KDA284K", "Active", "James Mwangi", "Town – Westlands", "14 passengers", "20 September 2026", "20 November 2026"):
+        for text in ("KDA284K", "Toyota Hiace", "Active", "James Mwangi", "Town – Westlands", "14 passengers", "20 September 2026", "20 November 2026"):
             self.assertContains(response, text)
         self.assertContains(response, reverse("edit_vehicle", args=[vehicle.pk]))
         self.assertIn("no-store", response["Cache-Control"])
@@ -205,6 +205,7 @@ class FleetDashboardTests(TestCase):
         vehicle.refresh_from_db()
         self.assertEqual((vehicle.registration, vehicle.status, vehicle.driver, vehicle.fleet), ("KDA285K", "maintenance", "James Mwangi", self.fleet))
         self.assertEqual(vehicle.next_service, date(2026, 11, 20))
+        self.assertEqual((vehicle.make, vehicle.model), ("Toyota", "Hiace"))
 
     def test_editing_to_existing_registration_is_rejected(self):
         self.vehicle("KCB719P")

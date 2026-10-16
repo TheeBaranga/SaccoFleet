@@ -10,9 +10,9 @@ class FleetAdmin(admin.ModelAdmin):
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    list_display = ("registration", "fleet", "driver", "route", "status")
+    list_display = ("registration", "make", "model", "fleet", "driver", "route", "status")
     list_filter = ("status",)
-    search_fields = ("registration", "driver", "route")
+    search_fields = ("registration", "make", "model", "driver", "route")
 
 
 @admin.register(Collection)

@@ -26,6 +26,8 @@ class Vehicle(models.Model):
 
     fleet = models.ForeignKey(Fleet, on_delete=models.CASCADE, related_name="vehicles")
     registration = models.CharField(max_length=20)
+    make = models.CharField(max_length=50, blank=True)
+    model = models.CharField(max_length=50, blank=True)
     driver = models.CharField(max_length=100, blank=True)
     route = models.CharField(max_length=120, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.IDLE)

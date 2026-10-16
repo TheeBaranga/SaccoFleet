@@ -10,6 +10,7 @@
   <h2 id="basic-heading">Basic information</h2>
   <dl class="detail-grid">
     <div><dt>Registration</dt><dd>{{ vehicle.registration }}</dd></div>
+    <div><dt>Make and model</dt><dd>{% if vehicle.make or vehicle.model %}{{ vehicle.make }} {{ vehicle.model }}{% else %}Not recorded{% endif %}</dd></div>
     <div><dt>Assigned driver</dt><dd>{{ vehicle.driver|default:"Unassigned" }}</dd></div>
     <div><dt>Route</dt><dd>{{ vehicle.route|default:"Unassigned" }}</dd></div>
     <div><dt>Capacity</dt><dd>{{ vehicle.capacity }} passenger{{ vehicle.capacity|pluralize }}</dd></div>

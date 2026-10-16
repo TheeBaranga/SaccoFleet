@@ -20,7 +20,7 @@ def vehicles(request):
     query = request.GET.get("q", "").strip()[:100]
     records = Vehicle.objects.filter(fleet__owner=request.user)
     if query:
-        records = records.filter(Q(registration__icontains="".join(query.split())) | Q(driver__icontains=query) | Q(route__icontains=query))
+        records = records.filter(Q(registration__icontains="".join(query.split())) | Q(make__icontains=query) | Q(model__icontains=query) | Q(driver__icontains=query) | Q(route__icontains=query))
     page = Paginator(records, 20).get_page(request.GET.get("page"))
     return render(request, "fleet/vehicles.html", {"page_obj": page, "query": query})
 

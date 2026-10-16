@@ -4,7 +4,7 @@
 <header class="page-heading"><div><h1>Vehicles</h1><p class="subtitle">Your fleet, in one place.</p></div><a class="primary action-link" href="{% url 'add_vehicle' %}">+ Add vehicle</a></header>
 <form class="search-form" method="get" action="{% url 'vehicles' %}">
   <label class="visually-hidden" for="vehicle-search">Search vehicles</label>
-  <input id="vehicle-search" type="search" name="q" value="{{ query }}" placeholder="Search registration, driver or route" maxlength="100">
+  <input id="vehicle-search" type="search" name="q" value="{{ query }}" placeholder="Search registration, make, driver or route" maxlength="100">
   <button class="secondary" type="submit">Search</button>
 </form>
 <div class="table-panel">{% include 'fleet/vehicle_table.html' with vehicles=page_obj.object_list %}</div>

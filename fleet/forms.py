@@ -5,10 +5,12 @@ from .models import Collection, Expense, Vehicle, normalize_registration
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
-        fields = ["registration", "driver", "route", "status", "capacity", "last_service", "next_service"]
+        fields = ["registration", "make", "model", "driver", "route", "status", "capacity", "last_service", "next_service"]
         labels = {"driver": "Assigned driver", "last_service": "Last service", "next_service": "Next service"}
         widgets = {
             "registration": forms.TextInput(attrs={"placeholder": "e.g. KDA 284K", "autofocus": True}),
+            "make": forms.TextInput(attrs={"placeholder": "e.g. Toyota"}),
+            "model": forms.TextInput(attrs={"placeholder": "e.g. Hiace"}),
             "driver": forms.TextInput(attrs={"placeholder": "Driver name"}),
             "route": forms.TextInput(attrs={"placeholder": "e.g. Town – Westlands"}),
             "last_service": forms.DateInput(attrs={"type": "date"}),
