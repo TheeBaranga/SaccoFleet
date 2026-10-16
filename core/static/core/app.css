@@ -106,3 +106,4 @@ tbody th a:hover{color:var(--green);text-decoration:underline}
 .detail-grid dt{color:var(--muted);font-size:14px}
 .detail-grid dd{margin:8px 0 0;font-size:16px;overflow-wrap:anywhere}
 @media(max-width:760px){.detail-panel{padding:20px}.detail-grid{grid-template-columns:1fr;gap:18px}}
+.stats-single{grid-template-columns:minmax(0,320px)}

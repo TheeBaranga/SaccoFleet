@@ -1,14 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.db.models import Q
+from datetime import timedelta
+from django.db.models import Q, Sum
+from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from .forms import CollectionForm, VehicleForm
-from .models import Fleet, Vehicle
+from .models import Collection, Fleet, Vehicle
 
 
 @never_cache
@@ -79,3 +81,22 @@ def record_collection(request):
         messages.success(request, "Collection recorded.")
         return redirect("dashboard")
     return render(request, "fleet/form.html", {"form": form, "heading": "Record collection", "description": "Record a vehicle’s collections in whole Kenyan shillings.", "button_label": "Save collection", "no_vehicles": not has_vehicles, "cancel_url": reverse("dashboard"), "back_label": "Back to dashboard"})
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET"])
+def collections(request):
+    records = Collection.objects.filter(vehicle__fleet__owner=request.user).select_related("vehicle")
+    total = records.aggregate(total=Sum("amount"))["total"] or 0
+    page = Paginator(records, 20).get_page(request.GET.get("page"))
+    return render(request, "fleet/collections.html", {"page_obj": page, "total": f"{total:,}"})
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET"])
+def maintenance(request):
+    today = timezone.localdate()
+    vehicles = Vehicle.objects.filter(fleet__owner=request.user, next_service__isnull=False).order_by("next_service")
+    return render(request, "fleet/maintenance.html", {"vehicles": vehicles, "today": today, "soon": today + timedelta(days=7)})

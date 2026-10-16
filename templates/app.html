@@ -4,8 +4,10 @@
   <aside class="sidebar">
     {% include 'brand.html' %}
     <nav aria-label="Main navigation">
-      <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'record_collection' %}aria-current="page"{% endif %}>Dashboard</a>
+      <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
       <a href="{% url 'vehicles' %}" {% if request.resolver_match.url_name == 'vehicles' or request.resolver_match.url_name == 'add_vehicle' or request.resolver_match.url_name == 'vehicle_detail' or request.resolver_match.url_name == 'edit_vehicle' %}aria-current="page"{% endif %}>Vehicles</a>
+      <a href="{% url 'collections' %}" {% if request.resolver_match.url_name == 'collections' or request.resolver_match.url_name == 'record_collection' %}aria-current="page"{% endif %}>Collections</a>
+      <a href="{% url 'maintenance' %}" {% if request.resolver_match.url_name == 'maintenance' %}aria-current="page"{% endif %}>Maintenance</a>
     </nav>
     <div class="profile">
       <p>{{ request.user.email }}</p>

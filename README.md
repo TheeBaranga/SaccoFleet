@@ -62,11 +62,13 @@ The dashboard shows the first five registrations alphabetically. **View all vehi
 
 Click a registration in any vehicle table to open its details page, showing the driver, route, capacity and service dates. **Edit vehicle** on that page updates those details.
 
+**Collections** in the sidebar lists every recorded collection, newest first, with the total collected. **Maintenance** lists vehicles with a next service date, soonest first, marked Overdue, Due this week or Scheduled.
+
 After updating the code, apply `python manage.py migrate` and restart any server started with `--noreload`. Tests run with `python manage.py test`.
 
 ## Next steps
 
-1. Add collection history and corrections.
+1. Add collection corrections.
 2. Configure password recovery email, deployment and production security checks.
 
 ## Deployment configuration

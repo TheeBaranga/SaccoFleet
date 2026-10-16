@@ -216,6 +216,27 @@ class FleetDashboardTests(TestCase):
         vehicle.refresh_from_db()
         self.assertEqual(vehicle.registration, "KDA284K")
 
+    def test_collections_page_lists_own_collections_with_total(self):
+        own = self.vehicle()
+        other = Vehicle.objects.create(fleet=self.other_fleet, registration="OTHER999")
+        Collection.objects.create(vehicle=own, amount=12500, date=date(2026, 10, 15))
+        Collection.objects.create(vehicle=own, amount=3500, date=date(2026, 10, 14))
+        Collection.objects.create(vehicle=other, amount=77777, date=date(2026, 10, 15))
+        response = self.client.get(reverse("collections"))
+        self.assertEqual(response.context["total"], "16,000")
+        self.assertContains(response, "KDA284K")
+        self.assertNotContains(response, "OTHER999")
+
+    def test_maintenance_page_lists_scheduled_services_soonest_first(self):
+        today = timezone.localdate()
+        self.vehicle("KCB719P", next_service=today + timedelta(days=30))
+        self.vehicle("KCF631R", next_service=today - timedelta(days=1))
+        self.vehicle("KDB100A")
+        Vehicle.objects.create(fleet=self.other_fleet, registration="OTHER999", next_service=today)
+        response = self.client.get(reverse("maintenance"))
+        self.assertEqual([v.registration for v in response.context["vehicles"]], ["KCF631R", "KCB719P"])
+        self.assertContains(response, "Overdue")
+
 
 class NewFleetTests(TestCase):
     def test_reading_dashboard_does_not_create_records_and_first_vehicle_sets_up_fleet(self):

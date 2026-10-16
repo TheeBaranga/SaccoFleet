@@ -1,0 +1,24 @@
+{% extends 'app.html' %}
+{% block title %}Maintenance | Sacco Fleet{% endblock %}
+{% block page_content %}
+<header class="page-heading"><div><h1>Maintenance</h1><p class="subtitle">Upcoming services, soonest first.</p></div></header>
+<div class="table-panel">
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th scope="col">Vehicle</th><th scope="col">Last service</th><th scope="col">Next service</th><th scope="col">Due</th></tr></thead>
+      <tbody>
+        {% for vehicle in vehicles %}
+        <tr>
+          <th scope="row"><a href="{% url 'vehicle_detail' vehicle.pk %}">{{ vehicle.registration }}</a></th>
+          <td>{{ vehicle.last_service|date:"j M Y"|default:"Not recorded" }}</td>
+          <td>{{ vehicle.next_service|date:"j M Y" }}</td>
+          <td>{% if vehicle.next_service < today %}<span class="badge badge-maintenance">Overdue</span>{% elif vehicle.next_service <= soon %}<span class="badge badge-maintenance">Due this week</span>{% else %}<span class="badge badge-idle">Scheduled</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="empty-state"><h3>No services scheduled</h3><p>Add a next service date to a vehicle to see it here.</p><a href="{% url 'vehicles' %}">Go to vehicles</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
