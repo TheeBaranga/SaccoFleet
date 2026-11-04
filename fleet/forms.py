@@ -1,3 +1,5 @@
+from datetime import timedelta
+from django.utils import timezone
 from django import forms
 from .models import Collection, Expense, Vehicle, normalize_registration
 
@@ -57,3 +59,32 @@ class ExpenseForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["vehicle"].queryset = Vehicle.objects.filter(fleet__owner=owner)
         self.fields["vehicle"].empty_label = "Choose a vehicle"
+
+
+class DateRangeForm(forms.Form):
+    period = forms.ChoiceField(choices=[("today", "Today"), ("7", "Last 7 days"),
+        ("month", "This month"), ("custom", "Custom range")], initial="7")
+    start = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+    end = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+
+    def clean(self):
+        data = super().clean()
+        today = timezone.localdate()
+        period = data.get("period")
+        if period == "custom":
+            for field in ("start", "end"):
+                if not data.get(field) and field not in self.errors:
+                    self.add_error(field, "Choose a date for your custom range.")
+            start, end = data.get("start"), data.get("end")
+            if start and end:
+                if start > end:
+                    self.add_error("end", "End date must be on or after the start date.")
+                elif end > today:
+                    self.add_error("end", "Choose today or an earlier date.")
+                elif (end-start).days > 365:
+                    self.add_error("end", "Choose a range of up to 366 days.")
+        elif period:
+            data["end"] = today
+            data["start"] = {"today": today, "7": today-timedelta(days=6),
+                             "month": today.replace(day=1)}[period]
+        return data

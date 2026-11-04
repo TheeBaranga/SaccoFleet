@@ -1,0 +1,9 @@
+{% load humanize %}
+<section class="table-panel">
+  <div class="panel-heading"><h2>{{ heading }}</h2><a href="{% url kind %}?q={{ vehicle.registration|urlencode }}">View all ↗</a></div>
+  <p class="history-caption">Latest 5 records in the selected period</p>
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">Date</th><th scope="col">{% if kind == 'expenses' %}Category{% else %}Vehicle{% endif %}</th><th scope="col">Amount</th></tr></thead>
+    <tbody>{% for record in records %}<tr><td>{{ record.date|date:'j M Y' }}</td><td>{% if kind == 'expenses' %}{{ record.get_category_display }}{% else %}{{ vehicle.registration }}{% endif %}</td><td class="amount">KSh {{ record.amount|intcomma }}</td></tr>{% empty %}<tr><td colspan="3" class="empty-state">No {{ kind }} in this period.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>

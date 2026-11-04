@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
-from .presentation import cash_flow, money_summary, vehicle_summary
+from .presentation import chart_context, reporting_period, money_summary, vehicle_summary
 from .forms import CollectionForm, ExpenseForm, VehicleForm
 from .models import Collection, Expense, Fleet, Vehicle
 
@@ -57,7 +57,18 @@ def add_vehicle(request):
 @require_http_methods(["GET"])
 def vehicle_detail(request, pk):
     vehicle = get_object_or_404(Vehicle, pk=pk, fleet__owner=request.user)
-    return render(request, "fleet/vehicle_detail.html", {"vehicle": vehicle})
+    period = reporting_period(request.GET)
+    context = {"vehicle": vehicle, **period}
+    if period["period_valid"]:
+        dates = (period["range_start"], period["range_end"])
+        collections = vehicle.collections.filter(date__range=dates)
+        expenses = vehicle.expenses.filter(date__range=dates)
+        incoming = collections.aggregate(total=Sum("amount"))["total"] or 0
+        outgoing = expenses.aggregate(total=Sum("amount"))["total"] or 0
+        context.update({"total_in": incoming, "total_out": outgoing, "profit": incoming-outgoing,
+                        "recent_vehicle_collections": collections[:5], "recent_vehicle_expenses": expenses[:5],
+                        **chart_context(request.user, period, vehicle)})
+    return render(request, "fleet/vehicle_detail.html", context)
 
 
 @never_cache
@@ -78,7 +89,7 @@ def edit_vehicle(request, pk):
 @login_required
 @require_http_methods(["GET", "POST"])
 def record_collection(request):
-    form = CollectionForm(request.POST if request.method == "POST" else None, owner=request.user)
+    form = CollectionForm(request.POST if request.method == "POST" else None, owner=request.user, initial={"vehicle": request.GET.get("vehicle")})
     has_vehicles = Vehicle.objects.filter(fleet__owner=request.user).exists()
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -184,7 +195,7 @@ def expenses(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def add_expense(request):
-    form = ExpenseForm(request.POST if request.method == "POST" else None, owner=request.user)
+    form = ExpenseForm(request.POST if request.method == "POST" else None, owner=request.user, initial={"vehicle": request.GET.get("vehicle")})
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Expense recorded.")
@@ -222,20 +233,19 @@ def delete_expense(request, pk):
 @login_required
 @require_http_methods(["GET"])
 def reports(request):
-    today = timezone.localdate()
-    collections = Collection.objects.filter(vehicle__fleet__owner=request.user)
-    expenses = Expense.objects.filter(vehicle__fleet__owner=request.user)
-
-    chart = cash_flow(request.user, today)
-
-    # All-time totals per vehicle.
-    per_in = dict(collections.values_list("vehicle").annotate(total=Sum("amount")))
-    per_out = dict(expenses.values_list("vehicle").annotate(total=Sum("amount")))
+    period = reporting_period(request.GET)
+    if not period["period_valid"]:
+        return render(request, "fleet/reports.html", period)
+    dates = (period["range_start"], period["range_end"])
+    collections = Collection.objects.filter(vehicle__fleet__owner=request.user, date__range=dates)
+    expenses = Expense.objects.filter(vehicle__fleet__owner=request.user, date__range=dates)
+    per_in = dict(collections.order_by().values_list("vehicle").annotate(total=Sum("amount")))
+    per_out = dict(expenses.order_by().values_list("vehicle").annotate(total=Sum("amount")))
     rows = []
     for vehicle in Vehicle.objects.filter(fleet__owner=request.user):
         collected, spent = per_in.get(vehicle.pk, 0), per_out.get(vehicle.pk, 0)
-        rows.append({"vehicle": vehicle, "collected": collected, "spent": spent, "profit": collected - spent})
+        rows.append({"vehicle": vehicle, "collected": collected, "spent": spent, "profit": collected-spent})
     rows.sort(key=lambda row: row["profit"], reverse=True)
-
     total_in, total_out = sum(per_in.values()), sum(per_out.values())
-    return render(request, "fleet/reports.html", {"chart": chart, "rows": rows, "total_in": total_in, "total_out": total_out, "profit": total_in - total_out})
+    return render(request, "fleet/reports.html", {**period, **chart_context(request.user, period),
+        "rows": rows, "total_in": total_in, "total_out": total_out, "profit": total_in-total_out})

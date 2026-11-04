@@ -1,0 +1,8 @@
+<form class="date-range" method="get" aria-label="Reporting period" novalidate>
+  <div><label for="{{ date_form.period.id_for_label }}">Period</label>{{ date_form.period }}{{ date_form.period.errors }}</div>
+  <div><label for="{{ date_form.start.id_for_label }}">From <span class="optional">(custom)</span></label>{{ date_form.start }}{{ date_form.start.errors }}</div>
+  <div><label for="{{ date_form.end.id_for_label }}">To <span class="optional">(custom)</span></label>{{ date_form.end }}{{ date_form.end.errors }}</div>
+  <button class="primary" type="submit">Apply dates</button>
+  {{ date_form.non_field_errors }}
+</form>
+{% if period_valid %}<p class="range-caption">Financial figures for {{ range_label }}.</p>{% else %}<p class="alert" role="alert">Please correct the date range to view your financial figures.</p>{% endif %}

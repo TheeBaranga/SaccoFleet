@@ -4,7 +4,7 @@ A simple Sacco fleet management application based on the approved Login, Dashboa
 
 ## Current step dashboard
 
-The approved login screen now uses real email and password authentication. Sign-in creates a Django session, the dashboard requires login, and sign-out uses a CSRF-protected POST. The dashboard shows real fleet totals, active vehicles, today’s recorded collections and a five-vehicle status preview. Add vehicle and Record collection forms populate it.
+The approved login screen now uses real email and password authentication. Sign-in creates a Django session, the dashboard requires login, and sign-out uses a CSRF-protected POST. The dashboard shows real fleet totals, active vehicles, collections and expenses for a selected period, net profit, reminders and a five-vehicle status preview. Add vehicle and Record collection forms populate it.
 
 ### Requirements
 
@@ -56,7 +56,7 @@ See [the repository guide](docs/repository-guide.md) for a step-by-step request 
 
 ## Using the dashboard
 
-After signing in, open `/dashboard/`. New accounts have zero totals and no sample vehicles. Add your first vehicle using **Add vehicle**, then record collections using **Record collection**. Today’s collections sum positive whole Kenyan shillings for the current Africa/Nairobi date. Historical entries are saved but excluded from today’s total. Vehicle status is entered manually; Active is not live GPS tracking.
+After signing in, open `/dashboard/`. New accounts have zero totals and no sample vehicles. Add your first vehicle using **Add vehicle**, then record collections using **Record collection**. Dashboard, Reports and each vehicle’s financial section share Today, Last 7 days (default), This month and Custom range controls. Totals, charts and recent records use the selected inclusive dates in Africa/Nairobi. Custom ranges must end today or earlier and cover no more than 366 days. Invalid dates show an error without displaying misleading financial figures. Vehicle status is entered manually; Active is not live GPS tracking.
 
 The dashboard shows the first five registrations alphabetically. **View all vehicles** opens a searchable list, paginated at twenty vehicles per page. Each account currently owns one fleet, and customer pages only read and write that owner’s records. Refresh the page to see newly recorded data; no live-update service is included.
 
@@ -64,7 +64,7 @@ Click a registration in any vehicle table to open its details page, showing the 
 
 **Collections** in the sidebar lists every recorded collection, newest first, with the total collected. **Maintenance** lists vehicles with a next service date, soonest first, marked Overdue, Due this week or Scheduled.
 
-**Expenses** records fuel, repairs, insurance and other costs per vehicle. **Reports** shows total collected, total expenses and profit, a bar chart of the last seven days, and profit for each vehicle.
+**Expenses** records fuel, repairs, insurance and other costs per vehicle. **Reports** shows collections, expenses, profit and profit by vehicle for the selected dates. Charts group daily for up to 14 days, weekly for up to 90 days, and monthly for longer ranges; first and last buckets include only dates within the selected range. Periods without transactions show an explicit empty state. Vehicle details also show financial totals, a cash-flow chart, and the latest five collections and expenses for that vehicle. Quick record actions preselect the vehicle while preserving ownership validation.
 
 Collections and expenses can be edited or deleted from their lists. A vehicle can be deleted from its details page; this also deletes its collections and expenses, after a confirmation page.
 

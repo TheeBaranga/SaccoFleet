@@ -1,0 +1,5 @@
+<dl class="stats" aria-label="Selected period totals">
+  {% include 'stat.html' with label='Collections' value=total_in money=True icon='collections' %}
+  {% include 'stat.html' with label='Expenses' value=total_out money=True icon='expenses' %}
+  {% include 'stat.html' with label='Net profit' value=profit money=True dark=True %}
+</dl>

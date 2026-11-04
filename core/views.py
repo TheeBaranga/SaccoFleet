@@ -1,9 +1,9 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.utils import timezone
 from fleet.models import Collection, Expense, Vehicle
-from fleet.presentation import cash_flow, vehicle_summary
+from fleet.presentation import chart_context, reporting_period, vehicle_summary
 from datetime import timedelta
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
@@ -22,17 +22,25 @@ def dashboard(request):
     today = timezone.localdate()
     vehicles = Vehicle.objects.filter(fleet__owner=request.user)
     summary = vehicle_summary(request.user)
-    collections = Collection.objects.filter(vehicle__fleet__owner=request.user, date=today)
-    amount = collections.aggregate(total=Sum("amount"))["total"] or 0
-    spent = Expense.objects.filter(vehicle__fleet__owner=request.user, date=today).aggregate(total=Sum("amount"))["total"] or 0
-    return render(request, "core/dashboard.html", {
-        "today": today, "total_vehicles": summary["total"], "active_vehicles": summary["active"],
-        "todays_collections": f"{amount:,}", "vehicles": vehicles[:5],
-        "todays_expenses": spent, "profit": amount-spent, "summary": summary,
-        "chart": cash_flow(request.user, today),
-        "recent_collections": Collection.objects.filter(vehicle__fleet__owner=request.user).select_related("vehicle")[:4],
-        "reminders": vehicles.filter(next_service__lte=today+timedelta(days=7)).order_by("next_service")[:4],
-    })
+    period = reporting_period(request.GET)
+    context = {"today": today, "total_vehicles": summary["total"], "active_vehicles": summary["active"],
+               "vehicles": vehicles[:5], "summary": summary, **period,
+               "reminders": vehicles.filter(next_service__lte=today+timedelta(days=7)).order_by("next_service")[:4]}
+    if period["period_valid"]:
+        selected = Q(date__range=(period["range_start"], period["range_end"]))
+        def totals(model):
+            return model.objects.filter(vehicle__fleet__owner=request.user).aggregate(
+                selected=Sum("amount", filter=selected), today=Sum("amount", filter=Q(date=today)))
+        incoming, outgoing = totals(Collection), totals(Expense)
+        context.update({"todays_collections": f"{incoming['today'] or 0:,}",
+                        "todays_expenses": outgoing["today"] or 0,
+                        "period_in": incoming["selected"] or 0, "period_out": outgoing["selected"] or 0,
+                        "profit": (incoming["selected"] or 0)-(outgoing["selected"] or 0),
+                        "recent_collections": Collection.objects.filter(vehicle__fleet__owner=request.user)
+                            .filter(selected).select_related("vehicle")[:4],
+                        **chart_context(request.user, period)})
+    return render(request, "core/dashboard.html", context)
+
 
 
 @require_GET

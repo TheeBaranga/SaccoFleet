@@ -1,6 +1,6 @@
 """Shared, owner-scoped summaries for dashboard and finance pages."""
 from datetime import timedelta
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from .models import Collection, Expense, Vehicle
 
 
@@ -17,15 +17,49 @@ def money_summary(records, today):
     return {key: value or 0 for key, value in result.items()}
 
 
-def cash_flow(owner, today):
-    start = today - timedelta(days=6)
+def reporting_period(params):
+    """Validate once; views never query a guessed or invalid period."""
+    from .forms import DateRangeForm
+    form = DateRangeForm(params if params else {"period": "7"})
+    if not form.is_valid():
+        return {"date_form": form, "period_valid": False}
+    start, end = form.cleaned_data["start"], form.cleaned_data["end"]
+    return {"date_form": form, "period_valid": True, "range_start": start,
+            "range_end": end, "range_label": f"{start:%d %b %Y} – {end:%d %b %Y}"}
+
+
+def cash_flow(owner, today, start=None, vehicle=None):
+    """At most 14 daily/weekly/monthly buckets, using two grouped queries."""
+    from django.db.models.functions import TruncWeek, TruncMonth
+    start = start or today - timedelta(days=6)
+    days = (today-start).days + 1
+    trunc = None if days <= 14 else TruncWeek if days <= 90 else TruncMonth
+
+    def bucket(day):
+        if days <= 14:
+            return day
+        if days <= 90:
+            return day - timedelta(days=day.weekday())
+        return day.replace(day=1)
+
     def daily(model):
-        return dict(model.objects.filter(vehicle__fleet__owner=owner, date__range=(start, today))
-                    .order_by().values_list("date").annotate(total=Sum("amount")))
+        records = model.objects.filter(vehicle__fleet__owner=owner, date__range=(start, today))
+        if vehicle is not None:
+            records = records.filter(vehicle=vehicle)
+        return dict(records.order_by().annotate(bucket=trunc("date") if trunc else F("date"))
+                    .values_list("bucket").annotate(total=Sum("amount")))
+
     incoming, outgoing = daily(Collection), daily(Expense)
     largest = max([*incoming.values(), *outgoing.values(), 1])
-    return [{"day": start+timedelta(days=i),
-             "collected": incoming.get(start+timedelta(days=i), 0),
-             "spent": outgoing.get(start+timedelta(days=i), 0),
-             "collected_pct": round(incoming.get(start+timedelta(days=i), 0)*100/largest),
-             "spent_pct": round(outgoing.get(start+timedelta(days=i), 0)*100/largest)} for i in range(7)]
+    buckets = sorted({bucket(start+timedelta(days=i)) for i in range(days)})
+    return [{"day": day, "label": max(day, start).strftime("%d %b") if days <= 90 else day.strftime("%b %Y"),
+             "collected": incoming.get(day, 0), "spent": outgoing.get(day, 0),
+             "collected_pct": round(incoming.get(day, 0)*100/largest),
+             "spent_pct": round(outgoing.get(day, 0)*100/largest)} for day in buckets]
+
+
+def chart_context(owner, period, vehicle=None):
+    chart = cash_flow(owner, period["range_end"], period["range_start"], vehicle)
+    days = (period["range_end"]-period["range_start"]).days + 1
+    return {"chart": chart, "chart_has_activity": any(day["collected"] or day["spent"] for day in chart),
+            "chart_granularity": "Daily" if days <= 14 else "Weekly" if days <= 90 else "Monthly"}

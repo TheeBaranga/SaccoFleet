@@ -1,10 +1,11 @@
 {% extends 'app.html' %}
-{% block title %}{{ vehicle.registration }} | Sacco Fleet{% endblock %}
+{% load humanize %}
+{% block title %}{{ vehicle.registration }} | SaccoFleet{% endblock %}
 {% block page_content %}
 <a class="back-link" href="{% url 'vehicles' %}">← Back to vehicles</a>
 <header class="page-heading">
   <div class="title-row"><h1>{{ vehicle.registration }}</h1><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></div>
-  <div class="page-actions"><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a><a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Delete</a></div>
+  <div class="page-actions"><a class="primary action-link" href="{% url 'record_collection' %}?vehicle={{ vehicle.pk }}">+ Record collection</a><a class="secondary action-link" href="{% url 'add_expense' %}?vehicle={{ vehicle.pk }}">+ Record expense</a><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a><a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Delete</a></div>
 </header>
 <section class="detail-panel" aria-labelledby="basic-heading">
   <h2 id="basic-heading">Basic information</h2>
@@ -22,5 +23,17 @@
     <div><dt>Last service</dt><dd>{% if vehicle.last_service %}<time datetime="{{ vehicle.last_service|date:'Y-m-d' }}">{{ vehicle.last_service|date:"j F Y" }}</time>{% else %}Not recorded{% endif %}</dd></div>
     <div><dt>Next service</dt><dd>{% if vehicle.next_service %}<time datetime="{{ vehicle.next_service|date:'Y-m-d' }}">{{ vehicle.next_service|date:"j F Y" }}</time>{% else %}Not scheduled{% endif %}</dd></div>
   </dl>
+</section>
+<section aria-label="Vehicle finances">
+  <h2>Financial performance</h2>
+  {% include 'date_range.html' %}
+  {% if period_valid %}
+    {% include 'financial_stats.html' %}
+    {% include 'cash_flow.html' %}
+    <div class="vehicle-history">
+      {% include 'fleet/financial_history.html' with records=recent_vehicle_collections kind='collections' heading='Recent collections' %}
+      {% include 'fleet/financial_history.html' with records=recent_vehicle_expenses kind='expenses' heading='Recent expenses' %}
+    </div>
+  {% endif %}
 </section>
 {% endblock %}

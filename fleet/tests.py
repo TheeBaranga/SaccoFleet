@@ -288,7 +288,7 @@ class FleetDashboardTests(TestCase):
             self.assertEqual(self.client.post(reverse(name, args=[pk])).status_code, 404)
         self.assertTrue(Vehicle.objects.filter(pk=other.pk).exists() and Collection.objects.exists() and Expense.objects.exists())
 
-    def test_reports_show_profit_per_vehicle_and_last_seven_days(self):
+    def test_reports_default_totals_and_chart_use_same_seven_days(self):
         today = timezone.localdate()
         busy, quiet = self.vehicle(), self.vehicle("KCB719P")
         Collection.objects.create(vehicle=busy, amount=10000, date=today)
@@ -298,8 +298,8 @@ class FleetDashboardTests(TestCase):
         other = Vehicle.objects.create(fleet=self.other_fleet, registration="OTHER999")
         Collection.objects.create(vehicle=other, amount=99999, date=today)
         response = self.client.get(reverse("reports"))
-        self.assertEqual((response.context["total_in"], response.context["total_out"], response.context["profit"]), (15000, 5000, 10000))
-        self.assertEqual([(r["vehicle"].registration, r["profit"]) for r in response.context["rows"]], [("KDA284K", 12000), ("KCB719P", -2000)])
+        self.assertEqual((response.context["total_in"], response.context["total_out"], response.context["profit"]), (10000, 5000, 5000))
+        self.assertEqual([(r["vehicle"].registration, r["profit"]) for r in response.context["rows"]], [("KDA284K", 7000), ("KCB719P", -2000)])
         chart = response.context["chart"]
         self.assertEqual(len(chart), 7)
         self.assertEqual((chart[-1]["day"], chart[-1]["collected"], chart[-1]["collected_pct"]), (today, 10000, 100))
