@@ -1,0 +1,1 @@
+{% load humanize %}<div class="stat{% if dark %} stat-dark{% endif %}"><dt>{{ label }}{% if icon %}<span class="stat-icon">{% include 'icon.html' with name=icon %}</span>{% endif %}</dt><dd>{% if money %}KSh {% endif %}{{ value|intcomma }}</dd>{% if note %}<p class="stat-note">{{ note }}</p>{% endif %}</div>

@@ -2,27 +2,13 @@
 {% load humanize %}
 {% block title %}Reports | Sacco Fleet{% endblock %}
 {% block page_content %}
-<header class="page-heading"><div><h1>Reports</h1><p class="subtitle">Collections, expenses and profit for your fleet.</p></div></header>
+<header class="page-heading"><div><p class="eyebrow">Performance</p><h1>Reports</h1><p class="subtitle">See the bigger picture. Totals are all time; the chart shows the last 7 days.</p></div></header>
 <dl class="stats" aria-label="All-time totals">
   <div class="stat"><dt>Total collected</dt><dd>KSh {{ total_in|intcomma }}</dd></div>
   <div class="stat"><dt>Total expenses</dt><dd>KSh {{ total_out|intcomma }}</dd></div>
-  <div class="stat"><dt>Profit</dt><dd class="{% if profit < 0 %}negative{% endif %}">KSh {{ profit|intcomma }}</dd></div>
+  <div class="stat stat-dark"><dt>Profit</dt><dd class="{% if profit < 0 %}negative{% endif %}">KSh {{ profit|intcomma }}</dd></div>
 </dl>
-<section class="table-panel chart-panel" aria-labelledby="chart-heading">
-  <div class="panel-heading"><h2 id="chart-heading">Last 7 days</h2>
-    <p class="legend"><span class="key key-in"></span>Collected <span class="key key-out"></span>Spent</p></div>
-  <ul class="chart">
-    {% for day in chart %}
-    <li>
-      <span class="chart-day">{{ day.day|date:"D j M" }}</span>
-      <span class="chart-bars">
-        <span class="bar bar-in" style="width:{{ day.collected_pct }}%"></span><span class="bar-value">KSh {{ day.collected|intcomma }}</span>
-        <span class="bar bar-out" style="width:{{ day.spent_pct }}%"></span><span class="bar-value">KSh {{ day.spent|intcomma }}</span>
-      </span>
-    </li>
-    {% endfor %}
-  </ul>
-</section>
+{% include 'cash_flow.html' %}
 <section class="table-panel" aria-labelledby="vehicle-profit-heading">
   <div class="panel-heading"><h2 id="vehicle-profit-heading">Profit by vehicle</h2></div>
   <div class="table-scroll">

@@ -1,10 +1,10 @@
 <div class="table-scroll" role="region" aria-label="Vehicles table" tabindex="0">
   <table>
     <caption class="visually-hidden">Vehicle registrations, makes and models, assigned drivers, routes and current status</caption>
-    <thead><tr><th scope="col">Registration</th><th scope="col">Make and model</th><th scope="col">Driver</th><th scope="col">Route</th><th scope="col">Status</th></tr></thead>
+    <thead><tr><th scope="col">Vehicle</th><th scope="col">Capacity</th><th scope="col">Driver</th><th scope="col">Route</th><th scope="col">Status</th></tr></thead>
     <tbody>
       {% for vehicle in vehicles %}
-      <tr><th scope="row"><a href="{% url 'vehicle_detail' vehicle.pk %}">{{ vehicle.registration }}</a></th><td>{% if vehicle.make or vehicle.model %}{{ vehicle.make }} {{ vehicle.model }}{% else %}—{% endif %}</td><td>{{ vehicle.driver|default:"Unassigned" }}</td><td>{{ vehicle.route|default:"Unassigned" }}</td><td><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></td></tr>
+      <tr><th scope="row"><a href="{% url 'vehicle_detail' vehicle.pk %}">{{ vehicle.registration }}</a><small class="cell-subtitle">{{ vehicle.make }} {{ vehicle.model }}</small></th><td>{{ vehicle.capacity }} seats</td><td>{{ vehicle.driver|default:"Unassigned" }}</td><td>{{ vehicle.route|default:"Unassigned" }}</td><td><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></td></tr>
       {% empty %}
       <tr><td colspan="5" class="empty-state">
         {% if query %}<h3>No vehicles found</h3><p>Try another registration, driver or route.</p><a href="{% url 'vehicles' %}">Clear search</a>

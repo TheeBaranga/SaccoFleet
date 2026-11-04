@@ -9,6 +9,7 @@ from django.core.paginator import Paginator
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
+from .presentation import cash_flow, money_summary, vehicle_summary
 from .forms import CollectionForm, ExpenseForm, VehicleForm
 from .models import Collection, Expense, Fleet, Vehicle
 
@@ -21,8 +22,11 @@ def vehicles(request):
     records = Vehicle.objects.filter(fleet__owner=request.user)
     if query:
         records = records.filter(Q(registration__icontains="".join(query.split())) | Q(make__icontains=query) | Q(model__icontains=query) | Q(driver__icontains=query) | Q(route__icontains=query))
+    status = request.GET.get("status", "")
+    if status in Vehicle.Status.values:
+        records = records.filter(status=status)
     page = Paginator(records, 20).get_page(request.GET.get("page"))
-    return render(request, "fleet/vehicles.html", {"page_obj": page, "query": query})
+    return render(request, "fleet/vehicles.html", {"page_obj": page, "query": query, "summary": vehicle_summary(request.user), "status": status, "statuses": Vehicle.Status.choices})
 
 
 @never_cache
@@ -83,14 +87,28 @@ def record_collection(request):
     return render(request, "fleet/form.html", {"form": form, "heading": "Record collection", "description": "Record a vehicle’s collections in whole Kenyan shillings.", "button_label": "Save collection", "no_vehicles": not has_vehicles, "cancel_url": reverse("dashboard"), "back_label": "Back to dashboard"})
 
 
+def financial_filters(records, request):
+    query = request.GET.get("q", "").strip()[:100]
+    period = request.GET.get("period", "all")
+    today = timezone.localdate()
+    if query:
+        records = records.filter(Q(vehicle__registration__icontains="".join(query.split())) | Q(vehicle__driver__icontains=query))
+    if period == "today":
+        records = records.filter(date=today)
+    elif period == "month":
+        records = records.filter(date__range=(today.replace(day=1), today))
+    return records, query, period
+
+
 @never_cache
 @login_required
 @require_http_methods(["GET"])
 def collections(request):
     records = Collection.objects.filter(vehicle__fleet__owner=request.user).select_related("vehicle")
-    total = records.aggregate(total=Sum("amount"))["total"] or 0
+    records, query, period = financial_filters(records, request)
+    summary = money_summary(records, timezone.localdate())
     page = Paginator(records, 20).get_page(request.GET.get("page"))
-    return render(request, "fleet/collections.html", {"page_obj": page, "total": f"{total:,}"})
+    return render(request, "fleet/collections.html", {"page_obj": page, "total": f"{summary['total']:,}", "money": summary, "query": query, "period": period})
 
 
 @never_cache
@@ -99,7 +117,7 @@ def collections(request):
 def maintenance(request):
     today = timezone.localdate()
     vehicles = Vehicle.objects.filter(fleet__owner=request.user, next_service__isnull=False).order_by("next_service")
-    return render(request, "fleet/maintenance.html", {"vehicles": vehicles, "today": today, "soon": today + timedelta(days=7)})
+    return render(request, "fleet/maintenance.html", {"vehicles": vehicles, "today": today, "soon": today + timedelta(days=7), "overdue": vehicles.filter(next_service__lt=today).count(), "due_soon": vehicles.filter(next_service__range=(today, today + timedelta(days=7))).count(), "scheduled": vehicles.filter(next_service__gt=today + timedelta(days=7)).count()})
 
 
 @never_cache
@@ -145,9 +163,21 @@ def delete_collection(request, pk):
 @require_http_methods(["GET"])
 def expenses(request):
     records = Expense.objects.filter(vehicle__fleet__owner=request.user).select_related("vehicle")
-    total = records.aggregate(total=Sum("amount"))["total"] or 0
+    records, query, period = financial_filters(records, request)
+    summary = money_summary(records, timezone.localdate())
     page = Paginator(records, 20).get_page(request.GET.get("page"))
-    return render(request, "fleet/expenses.html", {"page_obj": page, "total": f"{total:,}"})
+    breakdown = list(records.order_by().values("category").annotate(amount=Sum("amount")).order_by("-amount"))
+    labels = dict(Expense.Category.choices)
+    offset = 0
+    colors = {"fuel": "#164d3d", "repairs": "#a9bf98", "insurance": "#d3af73", "other": "#d4d6cf"}
+    for item in breakdown:
+        item["label"] = labels.get(item["category"], item["category"])
+        item["percent"] = round(item["amount"] * 100 / (summary["total"] or 1))
+        item["arc"] = item["amount"] * 100 / (summary["total"] or 1)
+        item["offset"] = -offset
+        item["color"] = colors.get(item["category"], "#d4d6cf")
+        offset += item["arc"]
+    return render(request, "fleet/expenses.html", {"breakdown": breakdown, "page_obj": page, "total": f"{summary['total']:,}", "money": summary, "query": query, "period": period})
 
 
 @never_cache
@@ -196,14 +226,7 @@ def reports(request):
     collections = Collection.objects.filter(vehicle__fleet__owner=request.user)
     expenses = Expense.objects.filter(vehicle__fleet__owner=request.user)
 
-    # Last 7 days, oldest first, for the chart.
-    start = today - timedelta(days=6)
-    daily_in = dict(collections.filter(date__gte=start).values_list("date").annotate(total=Sum("amount")))
-    daily_out = dict(expenses.filter(date__gte=start).values_list("date").annotate(total=Sum("amount")))
-    days = [start + timedelta(days=i) for i in range(7)]
-    largest = max([daily_in.get(d, 0) for d in days] + [daily_out.get(d, 0) for d in days] + [1])
-    chart = [{"day": d, "collected": daily_in.get(d, 0), "spent": daily_out.get(d, 0),
-              "collected_pct": round(daily_in.get(d, 0) * 100 / largest), "spent_pct": round(daily_out.get(d, 0) * 100 / largest)} for d in days]
+    chart = cash_flow(request.user, today)
 
     # All-time totals per vehicle.
     per_in = dict(collections.values_list("vehicle").annotate(total=Sum("amount")))

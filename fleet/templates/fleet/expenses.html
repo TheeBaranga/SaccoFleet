@@ -2,10 +2,10 @@
 {% load humanize %}
 {% block title %}Expenses | Sacco Fleet{% endblock %}
 {% block page_content %}
-<header class="page-heading"><div><h1>Expenses</h1><p class="subtitle">Fuel, repairs and other costs, newest first.</p></div><a class="primary action-link" href="{% url 'add_expense' %}">+ Record expense</a></header>
-<dl class="stats stats-single"><div class="stat"><dt>Total spent</dt><dd>KSh {{ total }}</dd></div></dl>
-<div class="table-panel">
-  <div class="table-scroll">
+<header class="page-heading"><div><p class="eyebrow">Finances</p><h1>Expenses</h1><p class="subtitle">Know where your fleet’s money goes.</p></div><a class="primary action-link" href="{% url 'add_expense' %}">+ Record expense</a></header>
+<dl class="stats">{% include 'stat.html' with label='Today · filtered' value=money.today money=True icon='expenses' %}{% include 'stat.html' with label='This month · filtered' value=money.month money=True icon='expenses' %}{% include 'stat.html' with label='Spent · matching records' value=money.total money=True icon='expenses' %}</dl>
+<div class="finance-layout">
+<div class="table-panel">{% include 'list_filters.html' %}  <div class="table-scroll">
     <table>
       <thead><tr><th scope="col">Date</th><th scope="col">Vehicle</th><th scope="col">Category</th><th scope="col">Note</th><th scope="col">Amount</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
       <tbody>
@@ -19,11 +19,11 @@
     </table>
   </div>
 </div>
-{% if page_obj.has_other_pages %}
+<aside class="table-panel breakdown"><h2>Spending breakdown</h2><p class="subtitle">Matching records · by category</p>{% if breakdown %}<div class="donut"><svg viewBox="0 0 120 120" aria-hidden="true">{% for item in breakdown %}<circle cx="60" cy="60" r="44" fill="none" stroke="{{ item.color }}" stroke-width="17" pathLength="100" stroke-dasharray="{{ item.arc }} 100" stroke-dashoffset="{{ item.offset }}" transform="rotate(-90 60 60)"/>{% endfor %}</svg><div><small>Total spent</small><strong>KSh {{ money.total|intcomma }}</strong></div></div>{% endif %}{% for item in breakdown %}<div class="breakdown-item"><p><span>{{ item.label }}</span><strong>{{ item.percent }}%</strong></p><svg class="breakdown-bar" width="100%" height="8" aria-hidden="true"><rect width="100%" height="8" rx="4" fill="#eef0e9"/><rect width="{{ item.percent }}%" height="8" rx="4" fill="#164d3d"/></svg><small>KSh {{ item.amount|intcomma }}</small></div>{% empty %}<p class="empty-state">Add an expense to see your spending breakdown.</p>{% endfor %}</aside></div>{% if page_obj.has_other_pages %}
 <nav class="pagination" aria-label="Expense pages">
-  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  {% if page_obj.has_previous %}<a href="?q={{ query|urlencode }}&amp;period={{ period|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
   <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+  {% if page_obj.has_next %}<a href="?q={{ query|urlencode }}&amp;period={{ period|urlencode }}&amp;page={{ page_obj.next_page_number }}">Next</a>{% endif %}
 </nav>
 {% endif %}
 {% endblock %}

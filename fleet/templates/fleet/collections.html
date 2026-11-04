@@ -2,10 +2,10 @@
 {% load humanize %}
 {% block title %}Collections | Sacco Fleet{% endblock %}
 {% block page_content %}
-<header class="page-heading"><div><h1>Collections</h1><p class="subtitle">All recorded collections, newest first.</p></div><a class="primary action-link" href="{% url 'record_collection' %}">+ Record collection</a></header>
-<dl class="stats stats-single"><div class="stat"><dt>Total collected</dt><dd>KSh {{ total }}</dd></div></dl>
-<div class="table-panel">
-  <div class="table-scroll">
+<header class="page-heading"><div><p class="eyebrow">Finances</p><h1>Collections</h1><p class="subtitle">A clear view of money coming in.</p></div><a class="primary action-link" href="{% url 'record_collection' %}">+ Record collection</a></header>
+<dl class="stats">{% include 'stat.html' with label='Today · filtered' value=money.today money=True icon='collections' %}{% include 'stat.html' with label='This month · filtered' value=money.month money=True icon='collections' %}{% include 'stat.html' with label='Collected · matching records' value=money.total money=True icon='collections' %}</dl>
+<div class="finance-layout finance-wide">
+<div class="table-panel">{% include 'list_filters.html' %}  <div class="table-scroll">
     <table>
       <thead><tr><th scope="col">Date</th><th scope="col">Vehicle</th><th scope="col">Amount</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
       <tbody>
@@ -19,11 +19,11 @@
     </table>
   </div>
 </div>
-{% if page_obj.has_other_pages %}
+</div>{% if page_obj.has_other_pages %}
 <nav class="pagination" aria-label="Collection pages">
-  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  {% if page_obj.has_previous %}<a href="?q={{ query|urlencode }}&amp;period={{ period|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
   <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+  {% if page_obj.has_next %}<a href="?q={{ query|urlencode }}&amp;period={{ period|urlencode }}&amp;page={{ page_obj.next_page_number }}">Next</a>{% endif %}
 </nav>
 {% endif %}
 {% endblock %}
