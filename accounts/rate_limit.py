@@ -10,20 +10,20 @@ EMAIL_LIMIT = 5
 IP_LIMIT = 20
 
 
-def bucket_keys(email, remote_address):
+def bucket_keys(email, remote_address, namespace="login"):
     # Never trust a client-supplied forwarding header for the IP address.
     values = [(f"email:{email.strip().lower()[:254]}", EMAIL_LIMIT),
               (f"ip:{remote_address}", IP_LIMIT)]
-    return sorted((salted_hmac("saccofleet.login", value, algorithm="sha256").hexdigest(), limit)
+    return sorted((salted_hmac(f"saccofleet.{namespace}", value, algorithm="sha256").hexdigest(), limit)
                   for value, limit in values)
 
 
 @transaction.atomic
-def reserve_attempt(email, remote_address):
+def reserve_attempt(email, remote_address, namespace="login"):
     """Reserve before checking a password so concurrent requests count too."""
     now = timezone.now()
     rows = []
-    for key, limit in bucket_keys(email, remote_address):
+    for key, limit in bucket_keys(email, remote_address, namespace):
         bucket, _ = LoginBucket.objects.select_for_update().get_or_create(
             key=key, defaults={"started_at": now},
         )

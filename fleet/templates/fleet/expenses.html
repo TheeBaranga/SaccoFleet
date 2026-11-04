@@ -3,6 +3,7 @@
 {% block title %}Expenses | Sacco Fleet{% endblock %}
 {% block page_content %}
 <header class="page-heading"><div><p class="eyebrow">Finances</p><h1>Expenses</h1><p class="subtitle">Know where your fleet’s money goes.</p></div><a class="primary action-link" href="{% url 'add_expense' %}">+ Record expense</a></header>
+<div class="page-actions">{% include 'csv_link.html' %}</div>
 <dl class="stats">{% include 'stat.html' with label='Today · filtered' value=money.today money=True icon='expenses' %}{% include 'stat.html' with label='This month · filtered' value=money.month money=True icon='expenses' %}{% include 'stat.html' with label='Spent · matching records' value=money.total money=True icon='expenses' %}</dl>
 <div class="finance-layout">
 <div class="table-panel">{% include 'list_filters.html' %}  <div class="table-scroll">

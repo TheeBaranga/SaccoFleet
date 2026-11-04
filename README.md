@@ -1,81 +1,65 @@
-# Saccofleet
+# SaccoFleet — classroom demo
 
-A simple Sacco fleet management application based on the approved Login, Dashboard, Vehicles and Vehicle details designs.
+A local Django fleet-management project for class demonstrations. No production deployment, paid hosting, external email provider, or cloud backup service is required. Keep the demo bound to `127.0.0.1`.
 
-## Current step dashboard
+## Run locally
 
-The approved login screen now uses real email and password authentication. Sign-in creates a Django session, the dashboard requires login, and sign-out uses a CSRF-protected POST. The dashboard shows real fleet totals, active vehicles, collections and expenses for a selected period, net profit, reminders and a five-vehicle status preview. Add vehicle and Record collection forms populate it.
-
-### Requirements
-
-Python 3.12 or newer. SQLite is included with Python. PostgreSQL can be selected through DATABASE_URL.
-
-### Run locally
+The project uses Python 3.12, Django, server-rendered HTML/CSS and SQLite. From the repository directory:
 
 ```sh
 python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-cp .env.example .env
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver 127.0.0.1:8000
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py createsuperuser
+.venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
 
-Choose your own administrator email and password when prompted. There are no default credentials or sample fleet records.
+On this existing checkout the environment, account, and data are already present: run only the last command, or open `start-demo.command` on macOS. Keep its terminal running while presenting. Open http://127.0.0.1:8000/login/. Credentials and database contents are not committed. Existing demo accounts can use Forgot password if needed.
 
-Open http://127.0.0.1:8000/login/ and use the account you created. Successful sign-in opens /dashboard/. The root page redirects according to your sign-in state. /admin/ is for staff administration; /health/ is a basic process health check, not a database readiness check.
+## Demonstration flow
 
-The login form accepts email addresses only. Forgot password shows administrator recovery instructions; email-based recovery and public registration are not included yet.
+1. Sign in and review fleet totals, cash flow and reminders. Choose a custom historical date range if the latest week has no transactions.
+2. Open Vehicles, search a registration and open its details. Record collection/expense actions preselect that vehicle; forms still enforce ownership.
+3. Use **Record service** on Maintenance or vehicle details. Enter its date, type, positive whole-KSh cost, notes and optional next service. One linked repairs expense records the cost exactly once. **Edit** in service history updates the same expense. Vehicle service dates reflect the latest completed service in recorded history. Historical date-only information is not fabricated into service records.
+4. Download CSV from Collections, Expenses or Reports. Downloads include all matching records, not just the current page. Reports export the selected inclusive date range; financial lists export their current search/date filters. Text cells are escaped against spreadsheet formulas.
+5. Sign out, select Forgot password, enter an account email, then open **Local demo inbox**. Open its reset link, choose a new password, and sign in. Email is saved locally inside `.venv/demo-emails/`; nothing is sent to an external mailbox. Tokens expire after 30 minutes and cannot be reused. The inbox is only available in DEBUG mode from localhost. It is deliberately a demonstration tool, not a production inbox.
 
-### Check the project
+Dashboard, Reports and vehicle financial details share Today, Last 7 days, This month and Custom range controls. Custom ranges cover up to 366 days and cannot end in the future. Charts group daily, weekly or monthly and show an explicit empty state when appropriate. Each account sees only its own fleet. Vehicle status is entered manually, not GPS tracking.
+
+## Free local backups
+
+The first signed-in request of each demo day automatically creates an integrity-checked SQLite snapshot under `backups/`. The app must be running and used for this to happen; no cloud scheduler runs while it is closed. Backups are not overwritten and are excluded from Git by the existing `*.sqlite3` rule.
+
+Before presenting or changing data, you can also run:
 
 ```sh
-python manage.py check
-python manage.py makemigrations --check --dry-run
-python manage.py test
+.venv/bin/python manage.py backup_demo
 ```
 
-### Project structure
+To restore: stop the server, make an extra backup, then copy the chosen `.sqlite3` backup over `db.sqlite3` and restart. Restore replaces the current data with that snapshot. Keep backups on your own computer and copy them to a USB drive if you need protection against disk loss. These snapshots are SQLite-only; PostgreSQL is not required or provisioned for this class project.
 
-- `config/`: application settings, URL routing and server entry points.
-- `accounts/`: custom email based user model, administration and initial migration.
-- `core/`: protected dashboard totals, shared CSS, health check and tests.
-- `fleet/`: fleet, vehicle and collection models, entry forms, searchable list and ownership checks.
-- `docs/scope.md`: agreed screens and data rules.
-- `.env.example`: configuration names; copy to an ignored `.env` for local overrides.
-- `requirements.txt`: exact dependency versions used for this setup.
+## Code organization
 
-The custom user model is created before the first database migration so email login can be added without replacing Django's default user table later. Passwords are hashed by Django.
+- `config/`: settings and URL routing.
+- `accounts/`: email/password sign-in, Django sessions, reset flow and local demo inbox. Login and reset requests have separate database-backed rate-limit buckets.
+- `core/`: dashboard, shared design, demo context, automatic local snapshots and backup command.
+- `fleet/models.py`: owner fleet, vehicles, collections, expenses and service history. A service references one expense rather than duplicating its amount/date/vehicle.
+- `fleet/forms.py`: validated record forms and the reusable date-range form.
+- `fleet/views.py`: ownership checks, forms, lists, financial pages and exports.
+- `fleet/presentation.py`: shared date validation and aggregate chart calculations.
+- `fleet/services.py`: atomic service/expense saving and schedule synchronization.
+- `fleet/exports.py`: shared streaming CSV response and safe text cells.
+- `templates/`: inherited application shell and reusable controls, cards, charts and icons.
+- `docs/design-system.md`: design and implementation notes.
 
-## Authentication behavior
+No extra frontend framework or new runtime dependency was added for these demo features. SQLite, ignored local email files, backups, secrets and virtual environments stay out of source control. PostgreSQL support via `DATABASE_URL` remains in the original settings but is unused for the default demonstration.
 
-Five failed attempts for an email address or twenty for an IP address within ten minutes pause customer sign-in for ten minutes. Counters are stored in the database and use keyed hashes for their identifiers. Successful sign-ins do not count as failures. Run `python manage.py prune_login_buckets` daily in production to remove expired counters. The admin login route is separate and needs its own production access restriction or throttling.
+## Verify
 
-See [the repository guide](docs/repository-guide.md) for a step-by-step request flow and an explanation of every file.
+```sh
+.venv/bin/python manage.py test
+.venv/bin/python manage.py makemigrations --check --dry-run
+.venv/bin/python manage.py check
+```
 
-## Using the dashboard
-
-After signing in, open `/dashboard/`. New accounts have zero totals and no sample vehicles. Add your first vehicle using **Add vehicle**, then record collections using **Record collection**. Dashboard, Reports and each vehicle’s financial section share Today, Last 7 days (default), This month and Custom range controls. Totals, charts and recent records use the selected inclusive dates in Africa/Nairobi. Custom ranges must end today or earlier and cover no more than 366 days. Invalid dates show an error without displaying misleading financial figures. Vehicle status is entered manually; Active is not live GPS tracking.
-
-The dashboard shows the first five registrations alphabetically. **View all vehicles** opens a searchable list, paginated at twenty vehicles per page. Each account currently owns one fleet, and customer pages only read and write that owner’s records. Refresh the page to see newly recorded data; no live-update service is included.
-
-Click a registration in any vehicle table to open its details page, showing the driver, route, capacity and service dates. **Edit vehicle** on that page updates those details.
-
-**Collections** in the sidebar lists every recorded collection, newest first, with the total collected. **Maintenance** lists vehicles with a next service date, soonest first, marked Overdue, Due this week or Scheduled.
-
-**Expenses** records fuel, repairs, insurance and other costs per vehicle. **Reports** shows collections, expenses, profit and profit by vehicle for the selected dates. Charts group daily for up to 14 days, weekly for up to 90 days, and monthly for longer ranges; first and last buckets include only dates within the selected range. Periods without transactions show an explicit empty state. Vehicle details also show financial totals, a cash-flow chart, and the latest five collections and expenses for that vehicle. Quick record actions preselect the vehicle while preserving ownership validation.
-
-Collections and expenses can be edited or deleted from their lists. A vehicle can be deleted from its details page; this also deletes its collections and expenses, after a confirmation page.
-
-After updating the code, apply `python manage.py migrate` and restart any server started with `--noreload`. Tests run with `python manage.py test`.
-
-## Next steps
-
-1. Configure password recovery email, deployment and production security checks.
-
-## Deployment configuration
-
-This setup is for local development. It has not been deployed. Before production, set DJANGO_DEBUG=false, a unique DJANGO_SECRET_KEY, DJANGO_ALLOWED_HOSTS, DATABASE_URL and HTTPS. Configure a production WSGI or ASGI server and static file serving. Run `python manage.py check --deploy` with production settings. Provision PostgreSQL and move existing data explicitly; changing DATABASE_URL does not migrate SQLite records.
-
-Local environment files, databases and virtual environments are ignored by Git. Never commit credentials or user data.
+Tests create disposable accounts and records in a separate test database. Password-reset tests use local mail only. Do not run demonstrations that alter credentials against another person's account.

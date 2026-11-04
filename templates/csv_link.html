@@ -1,0 +1,1 @@
+{% if period_valid or not date_form %}<a class="secondary action-link" href="?{% for key,value in request.GET.items %}{% if key != 'format' and key != 'page' %}{{ key|urlencode }}={{ value|urlencode }}&amp;{% endif %}{% endfor %}format=csv">Download CSV</a>{% endif %}

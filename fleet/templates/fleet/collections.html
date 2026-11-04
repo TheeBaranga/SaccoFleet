@@ -3,6 +3,7 @@
 {% block title %}Collections | Sacco Fleet{% endblock %}
 {% block page_content %}
 <header class="page-heading"><div><p class="eyebrow">Finances</p><h1>Collections</h1><p class="subtitle">A clear view of money coming in.</p></div><a class="primary action-link" href="{% url 'record_collection' %}">+ Record collection</a></header>
+<div class="page-actions">{% include 'csv_link.html' %}</div>
 <dl class="stats">{% include 'stat.html' with label='Today · filtered' value=money.today money=True icon='collections' %}{% include 'stat.html' with label='This month · filtered' value=money.month money=True icon='collections' %}{% include 'stat.html' with label='Collected · matching records' value=money.total money=True icon='collections' %}</dl>
 <div class="finance-layout finance-wide">
 <div class="table-panel">{% include 'list_filters.html' %}  <div class="table-scroll">

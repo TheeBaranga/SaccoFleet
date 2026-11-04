@@ -24,10 +24,7 @@
         {{ form.password }}
         {% if form.password.errors %}<div class="field-error" id="id_password_error" role="alert">{{ form.password.errors }}</div>{% endif %}
       </div>
-      <details class="recovery">
-        <summary>Forgot password?</summary>
-        <p>Contact your Sacco administrator to reset your password.</p>
-      </details>
+      <p class="recovery"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
       <button class="primary sign-in" type="submit">Sign in</button>
     </form>
   </section>

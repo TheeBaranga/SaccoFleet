@@ -24,3 +24,16 @@ Financial list cards reflect the search and date filters. Dashboard, Reports and
 - `fleet/test_reporting.py` → inclusive boundaries, invalid ranges, empty and expense-only charts, two-query aggregation, scoped history and safe quick-entry preselection.
 
 Fleet status and service reminders describe the current fleet, independently of historical financial dates. Reporting controls do not modify records. Real browser checks use existing data without adding test transactions to the user's database.
+
+## Classroom-only completion
+
+- `fleet/models.py` / migration `0004`: `ServiceRecord` points to one `Expense`. No duplicate cost, vehicle or service date columns.
+- `fleet/services.py`: atomic service + expense persistence; sync vehicle schedule from latest history. Generic expense editing redirects to its service form, and generic deletion of a linked expense is blocked.
+- `fleet/exports.py` and `templates/csv_link.html`: shared owner-scoped CSV downloads, preserving active filters and exporting every matching row. Formula-like text is escaped; numeric amounts remain numbers.
+- `accounts/views.py`, reset templates and routes: Django's token-based reset flow, separate reset throttling and a loopback-only demo inbox. No external SMTP service.
+- `core/context_processors.py`: shared local-demo visibility flag for recovery pages.
+- `core/backups.py`, `core/middleware.py`, `backup_demo` command: checked local SQLite copies, daily on the first signed-in demo request or on demand. No cloud tasks, paid resources or production deployment.
+- `start-demo.command`: a small macOS entry point that runs migrations and the loopback development server using the existing virtual environment.
+- `fleet/test_demo_features.py`, `accounts/test_recovery.py`, `core/test_backups.py`: accounting consistency, rollback, filters, CSV safety, token reset/reuse, inbox access and snapshot integrity.
+
+Services use positive whole-shilling costs and may be edited. Their notes are preserved separately from the expense's short service description. Vehicle deletion cascades service history through its expense entries. No records or credentials are preloaded into new databases.

@@ -10,8 +10,10 @@ from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from .presentation import chart_context, reporting_period, money_summary, vehicle_summary
-from .forms import CollectionForm, ExpenseForm, VehicleForm
-from .models import Collection, Expense, Fleet, Vehicle
+from .forms import CollectionForm, ExpenseForm, VehicleForm, ServiceForm
+from .models import Collection, Expense, Fleet, Vehicle, ServiceRecord
+from .services import save_service
+from .exports import csv_response
 
 
 @never_cache
@@ -58,7 +60,7 @@ def add_vehicle(request):
 def vehicle_detail(request, pk):
     vehicle = get_object_or_404(Vehicle, pk=pk, fleet__owner=request.user)
     period = reporting_period(request.GET)
-    context = {"vehicle": vehicle, **period}
+    context = {"vehicle": vehicle, "service_history": ServiceRecord.objects.filter(expense__vehicle=vehicle).select_related("expense")[:10], **period}
     if period["period_valid"]:
         dates = (period["range_start"], period["range_end"])
         collections = vehicle.collections.filter(date__range=dates)
@@ -117,6 +119,9 @@ def financial_filters(records, request):
 def collections(request):
     records = Collection.objects.filter(vehicle__fleet__owner=request.user).select_related("vehicle")
     records, query, period = financial_filters(records, request)
+    if request.GET.get("format") == "csv":
+        rows = ((r.date, r.vehicle.registration, r.vehicle.driver, r.amount) for r in records.iterator())
+        return csv_response("collections", ["Date", "Vehicle", "Driver", "Amount (KSh)"], rows)
     summary = money_summary(records, timezone.localdate())
     page = Paginator(records, 20).get_page(request.GET.get("page"))
     return render(request, "fleet/collections.html", {"page_obj": page, "total": f"{summary['total']:,}", "money": summary, "query": query, "period": period})
@@ -175,6 +180,9 @@ def delete_collection(request, pk):
 def expenses(request):
     records = Expense.objects.filter(vehicle__fleet__owner=request.user).select_related("vehicle")
     records, query, period = financial_filters(records, request)
+    if request.GET.get("format") == "csv":
+        rows = ((r.date, r.vehicle.registration, r.get_category_display(), r.note, r.amount) for r in records.iterator())
+        return csv_response("expenses", ["Date", "Vehicle", "Category", "Note", "Amount (KSh)"], rows)
     summary = money_summary(records, timezone.localdate())
     page = Paginator(records, 20).get_page(request.GET.get("page"))
     breakdown = list(records.order_by().values("category").annotate(amount=Sum("amount")).order_by("-amount"))
@@ -209,6 +217,8 @@ def add_expense(request):
 @require_http_methods(["GET", "POST"])
 def edit_expense(request, pk):
     expense = get_object_or_404(Expense, pk=pk, vehicle__fleet__owner=request.user)
+    if hasattr(expense, "service_record"):
+        return redirect("edit_service", pk=expense.service_record.pk)
     form = ExpenseForm(request.POST if request.method == "POST" else None, instance=expense, owner=request.user)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -222,6 +232,9 @@ def edit_expense(request, pk):
 @require_http_methods(["GET", "POST"])
 def delete_expense(request, pk):
     expense = get_object_or_404(Expense, pk=pk, vehicle__fleet__owner=request.user)
+    if hasattr(expense, "service_record"):
+        messages.error(request, "This expense belongs to a service record. Edit the service from the vehicle’s history.")
+        return redirect("vehicle_detail", pk=expense.vehicle_id)
     if request.method == "POST":
         expense.delete()
         messages.success(request, "Expense deleted.")
@@ -247,5 +260,28 @@ def reports(request):
         rows.append({"vehicle": vehicle, "collected": collected, "spent": spent, "profit": collected-spent})
     rows.sort(key=lambda row: row["profit"], reverse=True)
     total_in, total_out = sum(per_in.values()), sum(per_out.values())
+    if request.GET.get("format") == "csv":
+        data = ((period["range_start"], period["range_end"], row["vehicle"].registration,
+                 row["collected"], row["spent"], row["profit"]) for row in rows)
+        return csv_response("fleet-report", ["From", "To", "Vehicle", "Collections (KSh)", "Expenses (KSh)", "Profit (KSh)"], data)
     return render(request, "fleet/reports.html", {**period, **chart_context(request.user, period),
         "rows": rows, "total_in": total_in, "total_out": total_out, "profit": total_in-total_out})
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET", "POST"])
+def record_service(request, pk=None):
+    record = get_object_or_404(ServiceRecord.objects.select_related("expense"), pk=pk,
+                              expense__vehicle__fleet__owner=request.user) if pk else None
+    initial = {"service_type": record.service_type, "notes": record.notes, "next_service": record.next_service} if record else {"vehicle": request.GET.get("vehicle")}
+    form = ServiceForm(request.POST if request.method == "POST" else None, owner=request.user,
+                       instance=record.expense if record else None, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        record = save_service(form, request.user, record)
+        messages.success(request, "Service saved. Its cost is included once in expenses.")
+        return redirect("vehicle_detail", pk=record.expense.vehicle_id)
+    return render(request, "fleet/form.html", {"form": form, "heading": "Edit service" if record else "Record completed service",
+        "description": "The service cost is also recorded as a repairs expense. Do not enter it again.",
+        "button_label": "Save service", "cancel_url": reverse("maintenance"), "back_label": "Back to maintenance",
+        "no_vehicles": not Vehicle.objects.filter(fleet__owner=request.user).exists()})

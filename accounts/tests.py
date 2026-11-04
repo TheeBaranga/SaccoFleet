@@ -58,7 +58,7 @@ class LoginFlowTests(TestCase):
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
         self.assertContains(response, 'autocomplete="current-password"')
         self.assertContains(response, "Email address")
-        self.assertContains(response, "Contact your Sacco administrator")
+        self.assertContains(response, reverse("password_reset"))
 
     def test_login_creates_session_and_opens_dashboard(self):
         old_session = self.client.session

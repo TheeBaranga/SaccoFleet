@@ -3,6 +3,7 @@
 {% block title %}Reports | SaccoFleet{% endblock %}
 {% block page_content %}
 <header class="page-heading"><div><p class="eyebrow">Performance</p><h1>Reports</h1><p class="subtitle">See the bigger picture for your selected period.</p></div></header>
+<div class="page-actions">{% include 'csv_link.html' %}</div>
 {% include 'date_range.html' %}
 {% if period_valid %}
 {% include 'financial_stats.html' %}

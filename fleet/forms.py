@@ -88,3 +88,24 @@ class DateRangeForm(forms.Form):
             data["start"] = {"today": today, "7": today-timedelta(days=6),
                              "month": today.replace(day=1)}[period]
         return data
+
+
+class ServiceForm(ExpenseForm):
+    service_type = forms.CharField(max_length=100, label="Service type", help_text="e.g. Oil change or brake replacement")
+    notes = forms.CharField(required=False, max_length=2000, widget=forms.Textarea(attrs={"rows": 3}))
+    next_service = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+
+    class Meta(ExpenseForm.Meta):
+        fields = ["vehicle", "date", "service_type", "amount", "notes", "next_service"]
+        labels = {"amount": "Service cost (KSh)", "date": "Service date"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields["vehicle"].disabled = True
+
+    def clean(self):
+        data = super().clean()
+        if data.get("next_service") and data.get("date") and data["next_service"] < data["date"]:
+            self.add_error("next_service", "Next service must be on or after the completed service.")
+        return data

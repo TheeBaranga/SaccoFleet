@@ -20,7 +20,9 @@ def money_summary(records, today):
 def reporting_period(params):
     """Validate once; views never query a guessed or invalid period."""
     from .forms import DateRangeForm
-    form = DateRangeForm(params if params else {"period": "7"})
+    data = params.copy()
+    data.setdefault("period", "7")
+    form = DateRangeForm(data)
     if not form.is_valid():
         return {"date_form": form, "period_valid": False}
     start, end = form.cleaned_data["start"], form.cleaned_data["end"]

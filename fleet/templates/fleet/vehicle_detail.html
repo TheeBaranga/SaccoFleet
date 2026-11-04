@@ -5,7 +5,7 @@
 <a class="back-link" href="{% url 'vehicles' %}">← Back to vehicles</a>
 <header class="page-heading">
   <div class="title-row"><h1>{{ vehicle.registration }}</h1><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></div>
-  <div class="page-actions"><a class="primary action-link" href="{% url 'record_collection' %}?vehicle={{ vehicle.pk }}">+ Record collection</a><a class="secondary action-link" href="{% url 'add_expense' %}?vehicle={{ vehicle.pk }}">+ Record expense</a><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a><a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Delete</a></div>
+  <div class="page-actions"><a class="secondary action-link" href="{% url 'record_service' %}?vehicle={{ vehicle.pk }}">+ Record service</a><a class="primary action-link" href="{% url 'record_collection' %}?vehicle={{ vehicle.pk }}">+ Record collection</a><a class="secondary action-link" href="{% url 'add_expense' %}?vehicle={{ vehicle.pk }}">+ Record expense</a><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a><a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Delete</a></div>
 </header>
 <section class="detail-panel" aria-labelledby="basic-heading">
   <h2 id="basic-heading">Basic information</h2>
@@ -24,6 +24,7 @@
     <div><dt>Next service</dt><dd>{% if vehicle.next_service %}<time datetime="{{ vehicle.next_service|date:'Y-m-d' }}">{{ vehicle.next_service|date:"j F Y" }}</time>{% else %}Not scheduled{% endif %}</dd></div>
   </dl>
 </section>
+<section class="table-panel service-history"><div class="panel-heading"><h2>Service history</h2><a href="{% url 'record_service' %}?vehicle={{ vehicle.pk }}">Record service ↗</a></div><p class="history-caption">Latest 10 completed services · costs included in expenses</p><div class="table-scroll"><table><thead><tr><th>Date</th><th>Service</th><th>Notes</th><th>Cost</th><th>Next service</th><th>Action</th></tr></thead><tbody>{% for record in service_history %}<tr><td>{{ record.expense.date|date:'j M Y' }}</td><td>{{ record.service_type }}</td><td>{{ record.notes|default:'—' }}</td><td>KSh {{ record.expense.amount|intcomma }}</td><td>{{ record.next_service|date:'j M Y'|default:'Not scheduled' }}</td><td><a href="{% url 'edit_service' record.pk %}">Edit</a></td></tr>{% empty %}<tr><td colspan="6" class="empty-state">No completed services recorded yet.</td></tr>{% endfor %}</tbody></table></div></section>
 <section aria-label="Vehicle finances">
   <h2>Financial performance</h2>
   {% include 'date_range.html' %}

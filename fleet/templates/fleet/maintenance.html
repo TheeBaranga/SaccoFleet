@@ -1,7 +1,7 @@
 {% extends 'app.html' %}
 {% block title %}Maintenance | Sacco Fleet{% endblock %}
 {% block page_content %}
-<header class="page-heading"><div><p class="eyebrow">Fleet care</p><h1>Maintenance</h1><p class="subtitle">Keep your fleet ready for the road.</p></div></header>
+<header class="page-heading"><div><p class="eyebrow">Fleet care</p><h1>Maintenance</h1><p class="subtitle">Keep your fleet ready for the road.</p></div><a class="primary action-link" href="{% url 'record_service' %}">+ Record service</a></header>
 <dl class="stats">{% include 'stat.html' with label='Overdue' value=overdue icon='maintenance' %}{% include 'stat.html' with label='Due in the next 7 days' value=due_soon icon='maintenance' %}{% include 'stat.html' with label='Scheduled later' value=scheduled icon='vehicles' %}</dl><div class="table-panel">
   <div class="table-scroll">
     <table>

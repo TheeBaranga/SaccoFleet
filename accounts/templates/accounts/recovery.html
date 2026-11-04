@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}{{ heading }} | SaccoFleet{% endblock %}
+{% block content %}
+<main class="login-layout"><section class="login-form">
+  {% include 'brand.html' %}<h1>{{ heading }}</h1><p class="subtitle">{{ description }}</p>
+  {% if form %}<form method="post" novalidate>{% csrf_token %}{{ form.non_field_errors }}
+    {% for field in form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<div class="help-text">{{ field.help_text }}</div>{% endif %}<div class="field-error">{{ field.errors }}</div></div>{% endfor %}
+    <button class="primary sign-in" type="submit">{{ button_label }}</button>
+  </form>{% endif %}
+  {% if not form and validlink == False %}<p class="alert">This reset link is invalid or expired. <a href="{% url 'password_reset' %}">Request another link</a>.</p>{% endif %}
+  <div class="recovery-links"><a href="{% url 'login' %}">Back to sign in</a>{% if debug_demo %}<a href="{% url 'demo_inbox' %}">Open local demo inbox</a>{% endif %}</div>
+</section></main>
+{% endblock %}

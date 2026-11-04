@@ -105,3 +105,17 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.vehicle} - {self.get_category_display()} KSh {self.amount}"
+
+
+class ServiceRecord(models.Model):
+    """Service history references its single accounting entry; never duplicate costs."""
+    expense = models.OneToOneField(Expense, on_delete=models.CASCADE, related_name="service_record")
+    service_type = models.CharField(max_length=100)
+    notes = models.TextField(blank=True, max_length=2000)
+    next_service = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-expense__date", "-pk"]
+
+    def __str__(self):
+        return f"{self.expense.vehicle} — {self.service_type}"

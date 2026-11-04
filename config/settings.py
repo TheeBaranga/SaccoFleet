@@ -23,6 +23,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.DemoBackupMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -33,6 +34,7 @@ TEMPLATES = [{
     "OPTIONS": {"context_processors": [
         "django.template.context_processors.request", "django.contrib.auth.context_processors.auth",
         "django.contrib.messages.context_processors.messages",
+        "core.context_processors.demo_mode",
     ]},
 }]
 WSGI_APPLICATION = "config.wsgi.application"
@@ -64,3 +66,10 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
 SESSION_COOKIE_AGE = 60 * 60 * 8
+
+# Classroom demo only: email stays on this computer; no SMTP service is used.
+EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH = BASE_DIR / ".venv" / "demo-emails"
+DEFAULT_FROM_EMAIL = "SaccoFleet <demo@saccofleet.local>"
+PASSWORD_RESET_TIMEOUT = 1800
+DEMO_BACKUP_DIR = BASE_DIR / "backups"
