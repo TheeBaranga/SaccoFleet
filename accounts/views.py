@@ -3,12 +3,15 @@ from email import policy
 from email.parser import BytesParser
 from urllib.parse import urlsplit
 from django.conf import settings
+from django.contrib.auth import login
+from django.db import IntegrityError, transaction
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView
-from .forms import EmailAuthenticationForm
+from django.views.generic.edit import FormView
+from .forms import EmailAuthenticationForm, SignUpForm
 from .rate_limit import reserve_attempt, release_attempt, WINDOW_SECONDS
 
 
@@ -34,6 +37,41 @@ class SignInView(LoginView):
         response = super().form_valid(form)
         release_attempt(self.reservations)
         return response
+
+
+class SignUpView(FormView):
+    template_name = "accounts/login.html"
+    form_class = SignUpForm
+    extra_context = {"registering": True}
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect("dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if reserve_attempt(
+            request.POST.get("email", ""), request.META.get("REMOTE_ADDR", "unknown"),
+            namespace="signup",
+        ) is None:
+            response = self.render_to_response(
+                self.get_context_data(form=self.get_form_class()(), throttled=True), status=429,
+            )
+            response["Retry-After"] = str(WINDOW_SECONDS)
+            return response
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        try:
+            with transaction.atomic():
+                user = form.save()
+        except IntegrityError:
+            if not form._meta.model.objects.filter(email__iexact=form.cleaned_data["email"]).exists():
+                raise
+            form.add_error("email", "An account already uses this email address.")
+            return self.form_invalid(form)
+        login(self.request, user)
+        return redirect("dashboard")
 
 
 class SignOutView(LogoutView):
