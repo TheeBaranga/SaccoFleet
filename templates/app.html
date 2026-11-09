@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block body_class %}app-page{% endblock %}
 {% block content %}
 {% include 'icons.html' %}
 <div class="app-layout">
@@ -17,7 +18,7 @@
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="link-button">{% include 'icon.html' with name='logout' %} Sign out</button></form>
     </div>
   </aside>
-  <main class="dashboard">
+  <main class="dashboard" tabindex="0">
     {% if messages %}<div class="messages" role="status">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>{% endif %}
     {% block page_content %}{% endblock %}
   </main>

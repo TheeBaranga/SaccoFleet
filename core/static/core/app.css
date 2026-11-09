@@ -164,6 +164,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-
 @media(max-width:760px){.date-range{padding:16px;gap:12px}.date-range>div{flex-basis:42%;min-width:120px}.date-range>div:first-child{flex-basis:100%}.date-range button{width:100%}.vehicle-history{grid-template-columns:1fr}.flow-chart{overflow-x:auto}.flow-columns{min-width:500px;grid-auto-flow:column;grid-auto-columns:minmax(65px,1fr);grid-template-columns:none}}
 .flow-chart{overflow-x:auto}.flow-columns{display:flex}.flow-day{flex:1;min-width:65px}
 textarea{font:inherit;width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;resize:vertical;background:#fdfdfb}.service-history{margin-bottom:26px}.demo-inbox{max-width:900px;margin:auto;padding:42px 24px}.demo-inbox pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.7 ui-monospace,monospace}.demo-inbox .eyebrow{margin-top:30px}.recovery-links{display:flex;flex-wrap:wrap;gap:16px;margin-top:24px;font-size:13px}
+/* Desktop shell: navigation and page content own independent scroll areas. */
+@media (min-width: 761px) {
+  body.app-page { height: 100dvh; overflow: hidden; }
+  .app-layout {
+    height: 100dvh;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+  .sidebar > * { flex-shrink: 0; }
+  .dashboard {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+}
 
 /* Split Editorial account page */
 .sign-in-page {

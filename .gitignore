@@ -9,3 +9,4 @@ __pycache__/
 staticfiles/
 .coverage
 .DS_Store
+docs
