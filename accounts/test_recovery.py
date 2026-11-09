@@ -41,11 +41,17 @@ class RecoveryTests(TestCase):
         self.assertEqual(len(mail.outbox), 5)
         self.assertEqual(Client(enforce_csrf_checks=True).post(reverse('password_reset'), {'email': self.user.email}).status_code, 403)
 
-    def test_local_inbox_works_without_external_email_and_is_local_only(self):
+    def test_local_inbox_requires_a_local_superuser_in_debug_mode(self):
         with TemporaryDirectory() as folder, override_settings(DEBUG=True, EMAIL_FILE_PATH=folder,
                 EMAIL_BACKEND='django.core.mail.backends.filebased.EmailBackend'):
             self.client.post(reverse('password_reset'), {'email': self.user.email})
+            self.assertEqual(self.client.get(reverse('demo_inbox')).status_code, 404)
+            self.client.force_login(self.user)
+            self.assertEqual(self.client.get(reverse('demo_inbox')).status_code, 404)
+            operator = get_user_model().objects.create_superuser('operator@example.com', 'Local-operator-123')
+            self.client.force_login(operator)
             response = self.client.get(reverse('demo_inbox'))
+            self.assertIn('no-store', response['Cache-Control'])
             self.assertContains(response, 'Open password reset')
             self.assertContains(response, self.user.email)
             self.assertEqual(self.client.get(reverse('demo_inbox'), REMOTE_ADDR='203.0.113.2').status_code, 404)

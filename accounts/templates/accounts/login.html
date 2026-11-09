@@ -3,68 +3,76 @@
 {% block title %}{% if registering %}Create an account{% else %}Sign in{% endif %} | Sacco Fleet{% endblock %}
 {% block body_class %}sign-in-page{% endblock %}
 {% block content %}
-<header class="account-brand">
-  {% include 'brand.html' %}
-</header>
 <main class="account-sheet">
-  <section class="account-ads" aria-label="Fleet offers">
-    <p class="account-ad-label">Fleet offers</p>
-    <div class="account-ad" data-account-ad>
-      <p>Sample ad · Fleet servicing</p>
-      <h2>Ready for the next route.</h2>
-      <p>Plan a service before the next shift.</p>
+  <section class="account-ads" aria-label="SaccoFleet features">
+    <header class="account-brand">
+      {% include 'brand.html' %}
+    </header>
+    <div class="account-ad" data-account-ad data-active>
+      <img class="account-ad-photo" src="{% static 'core/matatu-depot.jpg' %}" width="1817" height="866" alt="">
+      <div class="account-ad-copy">
+        <h2>Every matatu, every record, in order.</h2>
+        <p>See vehicle assignments, collections, and maintenance records in one workspace.</p>
+      </div>
     </div>
-    <div class="account-ad" data-account-ad hidden>
-      <p>Sample ad · Fleet insurance</p>
-      <h2>Cover for every vehicle.</h2>
-      <p>Explore fleet cover for your SACCO.</p>
+    <div class="account-ad" data-account-ad aria-hidden="true">
+      <img class="account-ad-photo" src="{% static 'core/offer-dispatch.jpg' %}" width="700" height="1050" alt="">
+      <div class="account-ad-copy">
+        <h2>Know what’s ready for the road.</h2>
+        <p>Check vehicle status and assigned routes before the next shift.</p>
+      </div>
     </div>
-    <div class="account-ad" data-account-ad hidden>
-      <p>Sample ad · Tyre care</p>
-      <h2>Start with a tyre check.</h2>
-      <p>Check pressure and tread before the morning run.</p>
+    <div class="account-ad" data-account-ad aria-hidden="true">
+      <img class="account-ad-photo" src="{% static 'core/offer-servicing.jpg' %}" width="700" height="1050" alt="">
+      <div class="account-ad-copy">
+        <h2>Stay ahead of servicing.</h2>
+        <p>Log completed work and see which matatus are due for service next.</p>
+      </div>
     </div>
     <div class="account-slide-controls" data-account-controls hidden>
-      <button type="button" data-account-slide aria-label="Fleet servicing ad" aria-pressed="true"></button>
-      <button type="button" data-account-slide aria-label="Fleet insurance ad" aria-pressed="false"></button>
-      <button type="button" data-account-slide aria-label="Tyre care ad" aria-pressed="false"></button>
+      <button type="button" data-account-slide aria-label="Every matatu, every record, in order." aria-pressed="true"><span aria-hidden="true"></span></button>
+      <button type="button" data-account-slide aria-label="Know what’s ready for the road." aria-pressed="false"><span aria-hidden="true"></span></button>
+      <button type="button" data-account-slide aria-label="Stay ahead of servicing." aria-pressed="false"><span aria-hidden="true"></span></button>
       <button type="button" data-account-rotation>Pause</button>
     </div>
   </section>
   <section class="account-entry" aria-labelledby="account-title">
-    {% if registering %}
-      <h1 id="account-title">Create an account</h1>
-      <p>Already have an account? <a href="{% url 'login' %}">Log in</a></p>
-    {% else %}
-      <h1 id="account-title">Welcome back.</h1>
-      <p>New to SaccoFleet? <a href="{% url 'signup' %}">Create an account</a></p>
-    {% endif %}
-    {% if throttled %}
-      <p class="alert" role="alert">Too many attempts. Please wait 10 minutes and try again.</p>
-    {% elif form.non_field_errors %}
-      <div class="alert" role="alert">{{ form.non_field_errors }}</div>
-    {% endif %}
-    <form method="post" novalidate>
-      {% csrf_token %}
-      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <div class="account-form">
+      <p class="account-kicker">{% if registering %}Get started{% else %}Sign in{% endif %}</p>
       {% if registering %}
-        <div class="account-names">
-          {% include 'accounts/account_field.html' with field=form.first_name %}
-          {% include 'accounts/account_field.html' with field=form.last_name %}
-        </div>
-      {% endif %}
-      {% if registering %}
-        {% include 'accounts/account_field.html' with field=form.email %}
-        {% include 'accounts/account_field.html' with field=form.password1 reveal=True %}
-        {% include 'accounts/account_field.html' with field=form.password2 %}
+        <h1 id="account-title">Create an account</h1>
+        <p>Already have an account? <a href="{% url 'login' %}">Log in</a></p>
       {% else %}
-        {% include 'accounts/account_field.html' with field=form.username %}
-        {% include 'accounts/account_field.html' with field=form.password reveal=True %}
-        <p class="recovery"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+        <h1 id="account-title">Welcome back</h1>
+        <p>New to SaccoFleet? <a href="{% url 'signup' %}">Create an account</a></p>
       {% endif %}
-      <button class="primary sign-in" type="submit">{% if registering %}Create account{% else %}Sign in{% endif %}</button>
-    </form>
+      {% if throttled %}
+        <p class="alert" role="alert">Too many attempts. Please wait 10 minutes and try again.</p>
+      {% elif form.non_field_errors %}
+        <div class="alert" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        {% if registering %}
+          <div class="account-names">
+            {% include 'accounts/account_field.html' with field=form.first_name %}
+            {% include 'accounts/account_field.html' with field=form.last_name %}
+          </div>
+        {% endif %}
+        {% if registering %}
+          {% include 'accounts/account_field.html' with field=form.email %}
+          {% include 'accounts/account_field.html' with field=form.password1 reveal=True %}
+          {% include 'accounts/account_field.html' with field=form.password2 %}
+        {% else %}
+          {% include 'accounts/account_field.html' with field=form.username %}
+          {% include 'accounts/account_field.html' with field=form.password reveal=True recovery=True %}
+          <label class="account-remember">{{ form.remember_me }} {{ form.remember_me.label }}</label>
+        {% endif %}
+        <button class="primary sign-in" type="submit">{% if registering %}Create account{% else %}Sign in{% endif %}</button>
+      </form>
+    </div>
   </section>
 </main>
-<script src="{% static 'core/login.js' %}?v=account-sheet" defer></script>
+<script src="{% static 'core/login.js' %}?v=offer-progress-1" defer></script>
 {% endblock %}

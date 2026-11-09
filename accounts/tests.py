@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.db import IntegrityError, transaction
 from django.test import TestCase
@@ -71,6 +72,19 @@ class LoginFlowTests(TestCase):
         self.assertContains(self.client.get(reverse("dashboard")), self.user.email)
         self.assertTrue(response.cookies["sessionid"]["httponly"])
 
+    def test_keep_me_signed_in_controls_cookie_lifetime(self):
+        for remember in (False, True):
+            with self.subTest(remember=remember):
+                client = Client()
+                data = self.credentials()
+                if remember:
+                    data["remember_me"] = "on"
+                response = client.post(reverse("login"), data)
+                self.assertRedirects(response, reverse("dashboard"))
+                cookie = response.cookies[settings.SESSION_COOKIE_NAME]
+                self.assertEqual(cookie["max-age"], settings.SESSION_COOKIE_AGE if remember else "")
+                self.assertEqual(client.session.get_expire_at_browser_close(), not remember)
+
     def test_mixed_case_email_can_sign_in(self):
         response = self.client.post(reverse("login"), self.credentials(username=" DRIVER@EXAMPLE.COM "))
         self.assertRedirects(response, reverse("dashboard"))
@@ -104,9 +118,14 @@ class LoginFlowTests(TestCase):
         response = self.client.post(reverse("login"), self.credentials(next="/dashboard/?view=all"))
         self.assertRedirects(response, "/dashboard/?view=all")
 
-    def test_authenticated_user_is_redirected_from_login(self):
+    def test_account_pages_do_not_reveal_session_status_via_redirects(self):
+        for route in ("login", "signup"):
+            self.assertEqual(self.client.get(reverse(route)).status_code, 200)
         self.client.force_login(self.user)
-        self.assertRedirects(self.client.get(reverse("login")), reverse("dashboard"))
+        for route in ("login", "signup"):
+            response = self.client.get(reverse(route))
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("no-store", response["Cache-Control"])
 
     def test_sign_out_rejects_get_and_clears_the_server_session(self):
         self.client.force_login(self.user)
@@ -158,8 +177,10 @@ class LoginThrottleTests(TestCase):
     def test_ip_limit_covers_different_emails(self):
         for number in range(IP_LIMIT):
             self.assertIsNotNone(reserve_attempt(f"person{number}@example.com", "192.0.2.1"))
+        bucket_count = LoginBucket.objects.count()
         response = self.client.post(reverse("login"), {"username": "fresh@example.com", "password": "wrong"}, REMOTE_ADDR="192.0.2.1", HTTP_X_FORWARDED_FOR="198.51.100.7")
         self.assertEqual(response.status_code, 429)
+        self.assertEqual(LoginBucket.objects.count(), bucket_count)
 
     def test_successful_login_does_not_consume_failure_allowance(self):
         response = self.client.post(reverse("login"), {"username": self.user.email, "password": "A-long-test-password-495!"})

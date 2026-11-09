@@ -12,10 +12,11 @@ IP_LIMIT = 20
 
 def bucket_keys(email, remote_address, namespace="login"):
     # Never trust a client-supplied forwarding header for the IP address.
-    values = [(f"email:{email.strip().lower()[:254]}", EMAIL_LIMIT),
-              (f"ip:{remote_address}", IP_LIMIT)]
-    return sorted((salted_hmac(f"saccofleet.{namespace}", value, algorithm="sha256").hexdigest(), limit)
-                  for value, limit in values)
+    # Check the IP first so blocked requests cannot create arbitrary email buckets.
+    values = [(f"ip:{remote_address}", IP_LIMIT),
+              (f"email:{email.strip().lower()[:254]}", EMAIL_LIMIT)]
+    return [(salted_hmac(f"saccofleet.{namespace}", value, algorithm="sha256").hexdigest(), limit)
+            for value, limit in values]
 
 
 @transaction.atomic

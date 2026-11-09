@@ -20,6 +20,7 @@ class EmailAuthenticationForm(AuthenticationForm):
             "autocomplete": "current-password", "placeholder": "Enter your password",
         }),
     )
+    remember_me = forms.BooleanField(required=False, label="Keep me signed in on this device")
     error_messages = {
         "invalid_login": "The email or password is incorrect. Please try again.",
         "inactive": "The email or password is incorrect. Please try again.",
