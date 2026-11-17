@@ -270,15 +270,16 @@ class FleetDashboardTests(TestCase):
         self.client.post(reverse("delete_expense", args=[expense.pk]))
         self.assertFalse(Expense.objects.exists())
 
-    def test_deleting_vehicle_removes_its_records(self):
+    def test_deactivating_vehicle_preserves_its_records(self):
         vehicle = self.vehicle()
         Collection.objects.create(vehicle=vehicle, amount=1000)
         Expense.objects.create(vehicle=vehicle, amount=500)
-        self.assertContains(self.client.get(reverse("delete_vehicle", args=[vehicle.pk])), "1 collection(s) and 1 expense(s)")
+        self.assertContains(self.client.get(reverse("delete_vehicle", args=[vehicle.pk])), "The vehicle and its existing history will be kept.")
         response = self.client.post(reverse("delete_vehicle", args=[vehicle.pk]))
         self.assertRedirects(response, reverse("vehicles"))
-        self.assertFalse(Vehicle.objects.filter(fleet=self.fleet).exists())
-        self.assertFalse(Collection.objects.exists() or Expense.objects.exists())
+        vehicle.refresh_from_db()
+        self.assertFalse(vehicle.is_active)
+        self.assertEqual((vehicle.collections.count(), vehicle.expenses.count()), (1, 1))
 
     def test_other_fleets_records_cannot_be_edited_or_deleted(self):
         other = Vehicle.objects.create(fleet=self.other_fleet, registration="OTHER999")

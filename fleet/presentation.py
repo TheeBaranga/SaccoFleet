@@ -6,8 +6,8 @@ from .models import Collection, Expense, Vehicle
 
 def vehicle_summary(owner):
     return Vehicle.objects.filter(fleet_id=owner.sacco_id).aggregate(
-        total=Count("pk"), active=Count("pk", filter=Q(status="active")),
-        idle=Count("pk", filter=Q(status="idle")), maintenance=Count("pk", filter=Q(status="maintenance")))
+        total=Count("pk"), active=Count("pk", filter=Q(is_active=True, status="active")),
+        idle=Count("pk", filter=Q(is_active=True, status="idle")), maintenance=Count("pk", filter=Q(is_active=True, status="maintenance")))
 
 
 def money_summary(records, today):

@@ -12,8 +12,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from .presentation import chart_context, reporting_period, money_summary, vehicle_summary
 from .forms import CollectionForm, ExpenseForm, VehicleForm, ServiceForm
-from .models import Collection, Expense, Vehicle, ServiceRecord
-from .services import save_service
+from .models import Assignment, Collection, Expense, Vehicle, ServiceRecord
+from .services import lock_sacco, save_service
 from .exports import csv_response
 
 
@@ -27,7 +27,7 @@ def vehicles(request):
         records = records.filter(Q(registration__icontains="".join(query.split())) | Q(make__icontains=query) | Q(model__icontains=query) | Q(driver__icontains=query) | Q(route__icontains=query))
     status = request.GET.get("status", "")
     if status in Vehicle.Status.values:
-        records = records.filter(status=status)
+        records = records.filter(status=status, is_active=True)
     page = Paginator(records, 20).get_page(request.GET.get("page"))
     return render(request, "fleet/vehicles.html", {"page_obj": page, "query": query, "summary": vehicle_summary(request.user), "status": status, "statuses": Vehicle.Status.choices})
 
@@ -59,10 +59,15 @@ def add_vehicle(request):
 @require_http_methods(["GET"])
 def vehicle_detail(request, pk):
     vehicle = get_object_or_404(Vehicle, pk=pk, fleet_id=request.user.sacco_id)
+    now = timezone.now()
+    current = Assignment.objects.filter(vehicle=vehicle, fleet_id=vehicle.fleet_id, start__lte=now).filter(
+        Q(end__isnull=True) | Q(end__gt=now)
+    ).select_related("driver").first()
+    context = {"vehicle": vehicle, "current_assignment": current}
     if not request.user.is_sacco_manager:
-        return render(request, "fleet/vehicle_detail.html", {"vehicle": vehicle})
+        return render(request, "fleet/vehicle_detail.html", context)
     period = reporting_period(request.GET)
-    context = {"vehicle": vehicle, "service_history": ServiceRecord.objects.filter(expense__vehicle=vehicle).select_related("expense")[:10], **period}
+    context.update(service_history=ServiceRecord.objects.filter(expense__vehicle=vehicle).select_related("expense")[:10], **period)
     if period["period_valid"]:
         dates = (period["range_start"], period["range_end"])
         collections = vehicle.collections.filter(date__range=dates)
@@ -83,7 +88,8 @@ def edit_vehicle(request, pk):
     registration = vehicle.registration
     form = VehicleForm(request.POST if request.method == "POST" else None, instance=vehicle, owner=request.user)
     if request.method == "POST" and form.is_valid():
-        vehicle = form.save()
+        vehicle = form.save(commit=False)
+        vehicle.save(update_fields=form.Meta.fields)
         messages.success(request, f"{vehicle.registration} was updated.")
         return redirect("vehicle_detail", pk=pk)
     return render(request, "fleet/form.html", {"form": form, "heading": f"Edit {registration}", "description": "Update this vehicle’s details.", "button_label": "Save changes", "cancel_url": reverse("vehicle_detail", args=[pk]), "back_label": "Back to vehicle"})
@@ -142,13 +148,22 @@ def maintenance(request):
 @manager_required
 @require_http_methods(["GET", "POST"])
 def delete_vehicle(request, pk):
-    vehicle = get_object_or_404(Vehicle, pk=pk, fleet_id=request.user.sacco_id)
+    fleet_id = request.user.sacco_id
     if request.method == "POST":
-        vehicle.delete()
-        messages.success(request, f"{vehicle.registration} was deleted.")
+        with transaction.atomic():
+            lock_sacco(fleet_id)
+            vehicle = get_object_or_404(Vehicle, pk=pk, fleet_id=fleet_id)
+            vehicle.is_active = False
+            vehicle.save(update_fields=["is_active"])
+        messages.success(request, f"{vehicle.registration} was deactivated.")
         return redirect("vehicles")
-    warning = f"This also deletes its {vehicle.collections.count()} collection(s) and {vehicle.expenses.count()} expense(s)."
-    return render(request, "fleet/confirm_delete.html", {"heading": f"Delete {vehicle.registration}?", "warning": warning, "cancel_url": reverse("vehicle_detail", args=[pk])})
+    vehicle = get_object_or_404(Vehicle, pk=pk, fleet_id=fleet_id)
+    return render(request, "fleet/confirm_delete.html", {
+        "heading": f"Deactivate {vehicle.registration}?",
+        "warning": "The vehicle and its existing history will be kept.",
+        "confirm_label": "Deactivate vehicle",
+        "cancel_url": reverse("vehicle_detail", args=[pk]),
+    })
 
 
 @never_cache

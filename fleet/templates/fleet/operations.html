@@ -1,0 +1,25 @@
+{% extends 'app.html' %}
+{% block title %}Daily operations | SaccoFleet{% endblock %}
+{% block page_content %}
+<header class="page-heading">
+  <div><h1>Daily operations</h1><p class="subtitle">Trips, distance and staff-reported collections.</p></div>
+  <a class="primary action-link" href="{% url 'add_operation' %}">Record session</a>
+</header>
+<section class="table-panel" aria-label="Operation sessions">
+  <div class="table-scroll"><table>
+    <thead><tr><th scope="col">Session start (EAT)</th><th scope="col">Vehicle</th><th scope="col">Route</th><th scope="col">Trips</th><th scope="col">Distance</th><th scope="col">Reported collections</th><th scope="col">Odometer</th></tr></thead>
+    <tbody>
+      {% for record in records %}
+        <tr>
+          <th scope="row"><a href="{% url 'operation_detail' record.pk %}">{{ record.start|date:"j M Y, H:i" }}</a></th>
+          <td>{{ record.assignment.vehicle }}</td><td>{{ record.route.name }}</td><td>{{ record.trip_count }}</td>
+          <td>{{ record.distance_km }} km</td><td>KSh {{ record.reported_collections }}</td>
+          <td>{% if record.previous_closing_km != None and record.previous_closing_km != record.opening_km %}<span class="badge badge-maintenance">Gap to review</span>{% else %}—{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="empty-state">No operation sessions recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

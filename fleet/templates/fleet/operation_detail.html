@@ -1,0 +1,28 @@
+{% extends 'app.html' %}
+{% block title %}Operation session | SaccoFleet{% endblock %}
+{% block page_content %}
+<a class="back-link" href="{% url 'daily_operations' %}">← Daily operations</a>
+<header class="page-heading">
+  <div><h1>Operation session</h1><p class="subtitle">{{ record.assignment.vehicle }} · {{ record.start|date:"j M Y, H:i" }} EAT</p></div>
+  {% if request.user.is_sacco_manager %}<a class="secondary action-link" href="{% url 'edit_operation' record.pk %}">Correct session</a>{% endif %}
+</header>
+<section class="detail-panel" aria-label="Session details">
+  {% if record.previous_closing_km != None and record.previous_closing_km != record.opening_km %}
+    <p class="badge badge-maintenance">Odometer gap to review. Previous closing reading was {{ record.previous_closing_km }} km.</p>
+  {% endif %}
+  <dl class="detail-grid">
+    <div><dt>Driver</dt><dd>{{ record.assignment.driver }}</dd></div>
+    <div><dt>Route</dt><dd>{{ record.route }}</dd></div>
+    <div><dt>Start (EAT)</dt><dd>{{ record.start|date:"j M Y, H:i" }}</dd></div>
+    <div><dt>End (EAT)</dt><dd>{{ record.end|date:"j M Y, H:i" }}</dd></div>
+    <div><dt>Trips</dt><dd>{{ record.trip_count }}</dd></div>
+    <div><dt>Distance</dt><dd>{{ record.distance_km }} km</dd></div>
+    <div><dt>Opening odometer</dt><dd>{{ record.opening_km }} km</dd></div>
+    <div><dt>Closing odometer</dt><dd>{{ record.closing_km }} km</dd></div>
+    <div><dt>Reported collections</dt><dd>KSh {{ record.reported_collections }} (staff-reported)</dd></div>
+    <div><dt>Notes</dt><dd>{{ record.notes|default:"None"|linebreaksbr }}</dd></div>
+    <div><dt>Recorded by</dt><dd>{{ record.created_by.email }} · {{ record.created_at|date:"j M Y, H:i" }} EAT</dd></div>
+    <div><dt>Last modified by</dt><dd>{{ record.updated_by.email }} · {{ record.updated_at|date:"j M Y, H:i" }} EAT</dd></div>
+  </dl>
+</section>
+{% endblock %}

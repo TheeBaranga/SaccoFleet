@@ -4,8 +4,8 @@
 {% block page_content %}
 <a class="back-link" href="{% url 'vehicles' %}">← Back to vehicles</a>
 <header class="page-heading">
-  <div class="title-row"><h1>{{ vehicle.registration }}</h1><span class="badge badge-{{ vehicle.status }}">{{ vehicle.get_status_display }}</span></div>
-  {% if request.user.is_sacco_manager %}<div class="page-actions"><a class="secondary action-link" href="{% url 'record_service' %}?vehicle={{ vehicle.pk }}">+ Record service</a><a class="primary action-link" href="{% url 'record_collection' %}?vehicle={{ vehicle.pk }}">+ Record collection</a><a class="secondary action-link" href="{% url 'add_expense' %}?vehicle={{ vehicle.pk }}">+ Record expense</a><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a><a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Delete</a></div>
+  <div class="title-row"><h1>{{ vehicle.registration }}</h1><span class="badge badge-{{ vehicle.status }}">{% if vehicle.is_active %}{{ vehicle.get_status_display }}{% else %}Deactivated{% endif %}</span></div>
+  {% if request.user.is_sacco_manager %}<div class="page-actions"><a class="secondary action-link" href="{% url 'record_service' %}?vehicle={{ vehicle.pk }}">+ Record service</a><a class="primary action-link" href="{% url 'record_collection' %}?vehicle={{ vehicle.pk }}">+ Record collection</a><a class="secondary action-link" href="{% url 'add_expense' %}?vehicle={{ vehicle.pk }}">+ Record expense</a><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a>{% if vehicle.is_active %}<a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Deactivate</a>{% endif %}</div>
   {% endif %}
 </header>
 <section class="detail-panel" aria-labelledby="basic-heading">
@@ -13,7 +13,7 @@
   <dl class="detail-grid">
     <div><dt>Registration</dt><dd>{{ vehicle.registration }}</dd></div>
     <div><dt>Make and model</dt><dd>{% if vehicle.make or vehicle.model %}{{ vehicle.make }} {{ vehicle.model }}{% else %}Not recorded{% endif %}</dd></div>
-    <div><dt>Assigned driver</dt><dd>{{ vehicle.driver|default:"Unassigned" }}</dd></div>
+    <div><dt>Assigned driver</dt><dd>{% if current_assignment %}{{ current_assignment.driver }}{% elif vehicle.driver %}{{ vehicle.driver }} (legacy record){% else %}Unassigned{% endif %}</dd></div>
     <div><dt>Route</dt><dd>{{ vehicle.route|default:"Unassigned" }}</dd></div>
     <div><dt>Capacity</dt><dd>{{ vehicle.capacity }} passenger{{ vehicle.capacity|pluralize }}</dd></div>
   </dl>

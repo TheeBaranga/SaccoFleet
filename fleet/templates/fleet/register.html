@@ -1,0 +1,44 @@
+{% extends 'app.html' %}
+{% block title %}{{ heading }} | SaccoFleet{% endblock %}
+{% block page_content %}
+<header class="page-heading">
+  <div><h1>{{ heading }}</h1></div>
+  {% if request.user.is_sacco_manager %}
+    <a class="primary action-link" href="{% url 'add_'|add:section %}">Add {{ label }}</a>
+  {% endif %}
+</header>
+<section class="table-panel" aria-label="{{ heading }}">
+  <div class="table-scroll"><table>
+    <thead><tr>
+      {% for column in headings %}<th scope="col">{{ column }}</th>{% endfor %}
+      {% if request.user.is_sacco_manager %}<th scope="col">Actions</th>{% endif %}
+    </tr></thead>
+    <tbody>
+      {% for record in records %}
+        <tr>
+          <th scope="row">{{ record.name }}</th>
+          {% if section == 'drivers' %}
+            <td>{{ record.phone }}</td><td>{{ record.licence_reference }}</td>
+          {% else %}
+            <td>{{ record.start_point }}</td><td>{{ record.end_point }}</td>
+          {% endif %}
+          <td>{{ record.is_active|yesno:"Active,Deactivated" }}</td>
+          {% if request.user.is_sacco_manager %}
+            <td class="row-actions">
+              <a href="{% url 'edit_'|add:section record.pk %}">Edit</a>
+              {% if record.is_active %}
+                <form method="post" action="{% url 'deactivate_'|add:section record.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="secondary" aria-label="Deactivate {{ record.name }}">Deactivate</button>
+                </form>
+              {% endif %}
+            </td>
+          {% endif %}
+        </tr>
+      {% empty %}
+        <tr><td colspan="{% if request.user.is_sacco_manager %}5{% else %}4{% endif %}" class="empty-state">No {{ section }} yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

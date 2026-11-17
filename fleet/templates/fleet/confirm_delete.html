@@ -5,7 +5,7 @@
 <form method="post" class="entry-panel">
   {% csrf_token %}
   <h1>{{ heading }}</h1>
-  <p class="subtitle">{{ warning }} This cannot be undone.</p>
-  <div class="page-actions"><button class="danger" type="submit">Yes, delete</button><a class="secondary action-link" href="{{ cancel_url }}">Cancel</a></div>
+  <p class="subtitle">{{ warning }}{% if not confirm_label %} This cannot be undone.{% endif %}</p>
+  <div class="page-actions"><button class="danger" type="submit">{{ confirm_label|default:"Yes, delete" }}</button><a class="secondary action-link" href="{{ cancel_url }}">Cancel</a></div>
 </form>
 {% endblock %}

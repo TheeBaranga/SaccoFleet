@@ -20,3 +20,17 @@ def save_service(form, owner, record=None):
     vehicle.next_service = latest.next_service
     vehicle.save(update_fields=["last_service", "next_service"])
     return record
+
+
+def lock_sacco(fleet_id):
+    """Serialize validation and writes within this SACCO's transaction."""
+    from django.db import connection
+    from django.db.models import F
+    from .models import Fleet
+
+    fleets = Fleet.objects.filter(pk=fleet_id)
+    if connection.vendor == "sqlite":
+        # SQLite has no row locks. Acquire its write lock before reading conflicts.
+        fleets.update(name=F("name"))
+    else:
+        fleets.select_for_update().get()

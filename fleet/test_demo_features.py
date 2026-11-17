@@ -70,14 +70,14 @@ class DemoFeatureTests(TestCase):
         self.vehicle.refresh_from_db()
         self.assertIsNone(self.vehicle.last_service)
 
-    def test_foreign_history_is_inaccessible_and_vehicle_delete_cascades(self):
+    def test_foreign_history_is_inaccessible_and_deactivation_preserves_service(self):
         expense = Expense.objects.create(vehicle=self.foreign, amount=500)
         foreign = ServiceRecord.objects.create(expense=expense, service_type='Private')
         self.assertEqual(self.client.get(reverse('edit_service', args=[foreign.pk])).status_code, 404)
         self.client.post(reverse('record_service'), self.payload())
         self.client.post(reverse('delete_vehicle', args=[self.vehicle.pk]))
-        self.assertEqual(ServiceRecord.objects.count(), 1)
-        self.assertEqual(Expense.objects.count(), 1)
+        self.assertEqual(ServiceRecord.objects.count(), 2)
+        self.assertEqual(Expense.objects.count(), 2)
 
     def read_csv(self, name, params):
         response = self.client.get(reverse(name), {**params, 'format': 'csv'})
