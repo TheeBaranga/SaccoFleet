@@ -1,11 +1,19 @@
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
+from django.db import connection
 from django.http import HttpResponse
-from django.test import SimpleTestCase, RequestFactory, override_settings
-from .backups import backup_demo
+from django.test import RequestFactory, SimpleTestCase, TransactionTestCase, override_settings
+from django.utils import timezone
+
+from accounts.models import User
+from fleet.models import Collection, Expense, ServiceRecord, Vehicle
+from fleet.reporting_test_data import make_session
+
+from .backups import backup_demo, restore_demo
 from .middleware import DemoBackupMiddleware
 
 
@@ -41,3 +49,28 @@ class BackupTests(SimpleTestCase):
             middleware(request)
             middleware(request)
             backup.assert_called_once()
+
+
+class RestoreTests(TransactionTestCase):
+    def test_restore_matches_counts_relationships_and_refuses_overwrite(self):
+        if connection.vendor != "sqlite":
+            self.skipTest("Classroom backup and restore use SQLite.")
+        user = User.objects.create_user("restore@example.test")
+        vehicle = Vehicle.objects.create(fleet=user.sacco, registration="RESTORE1")
+        make_session(vehicle, timezone.localdate(), 100)
+        expense = Expense.objects.create(vehicle=vehicle, amount=50)
+        ServiceRecord.objects.create(expense=expense, service_type="Test service")
+        Collection.objects.create(vehicle=vehicle, amount=25)
+        with TemporaryDirectory() as folder:
+            backup = Path(folder) / "backup.sqlite3"
+            target = Path(folder) / "restored.sqlite3"
+            with closing(sqlite3.connect(backup)) as snapshot:
+                connection.connection.backup(snapshot)
+            counts, samples = restore_demo(backup, target)
+            self.assertEqual(counts["fleet_operationsession"], 1)
+            self.assertEqual(counts["fleet_servicerecord"], 1)
+            self.assertEqual(list(samples.values()), [1, 1, 1])
+            original = target.read_bytes()
+            with self.assertRaises(FileExistsError):
+                restore_demo(backup, target)
+            self.assertEqual(target.read_bytes(), original)

@@ -1,0 +1,19 @@
+# Data dictionary
+
+Domain primary keys are auto-generated integers unless stated otherwise. Foreign keys are required unless marked optional. Timestamps are timezone-aware and displayed in East Africa Time. Forms and database constraints enforce the rules indicated below.
+
+| Entity | Fields, meaning and validation |
+|---|---|
+| Fleet | `id` integer PK. `name` char(100), organisation name. `owner` optional one-to-one User, legacy owner reference cleared if the user is removed. |
+| User | `id` integer PK. `sacco` FK Fleet, required. `role` char(12), manager or operations. Operations accounts cannot hold Django staff or superuser flags. `email` email(254), normalized and unique without regard to case. `password` char(128), Django hash. `first_name`, `last_name` optional char(150) each. `is_active` boolean, sign-in eligibility. `is_staff`, `is_superuser` booleans, framework privileges. `last_login` optional datetime. `date_joined` datetime. `groups`, `user_permissions` many-to-many links to Django auth records. |
+| LoginBucket | `key` char(64) PK, hashed throttle key. `attempts` nonnegative integer. `started_at` datetime, rate-limit window start. |
+| Vehicle | `id` integer PK. `fleet` FK Fleet. `registration` char(20), uppercase and space-stripped, unique case-insensitively within fleet. `make`, `model` optional char(50) each. `driver`, `route` optional legacy notes char(100), char(120). `status` char(12), active, idle or maintenance. `capacity` positive small integer, minimum 1. `last_service`, `next_service` optional dates, next cannot precede last. `is_active` boolean for deactivation. `created_at` datetime. |
+| Driver | `id` integer PK. `fleet` FK Fleet. `name` char(100). `phone` char(32). `licence_reference` char(64), use fictional values for demos. `is_active` boolean. |
+| Route | `id` integer PK. `fleet` FK Fleet. `name`, `start_point`, `end_point` char(100) each. `is_active` boolean. |
+| Assignment | `id` integer PK. `fleet` FK Fleet. `driver`, `vehicle` FKs from the same SACCO, active for a new assignment. `start` datetime inclusive. `end` optional datetime exclusive, after start when supplied. Null end means ongoing. Assignments cannot overlap for the same driver or vehicle. Edits must preserve validity of saved sessions. |
+| OperationSession | `id` integer PK. `fleet` FK Fleet. `assignment`, `route` FKs from the same SACCO. New sessions require an active route. `start`, `end` datetimes, with end after start and both inside the assignment period. Vehicle periods cannot overlap. Assignment, route and start form a unique combination. `trip_count` nonnegative integer. `opening_km`, `closing_km`, `reported_collections` decimal(12,2), nonnegative with closing at least opening. `notes` optional text up to 2,000 characters. `created_by`, `updated_by` FKs to same-SACCO User. `created_at`, `updated_at` automatic timestamps. `distance_km` is calculated from the readings and has no database column. |
+| Collection | `id` integer PK. `vehicle` FK Vehicle, source of SACCO ownership. `amount` positive integer in whole KSh, minimum 1. `date` indexed date. `created_at` datetime. Historical entries are read-only in the app and excluded from operation totals. |
+| Expense | `id` integer PK. `vehicle` FK Vehicle, source of SACCO ownership. `category` char(12), fuel, repairs, insurance or other. `amount` positive integer KSh, minimum 1. `date` indexed date, future dates rejected by the app. `note` optional char(120). `created_at` datetime. |
+| ServiceRecord | `id` integer PK. `expense` one-to-one Expense, source of vehicle, cost, date and SACCO. `service_type` char(100). `notes` optional text up to 2,000 characters. `next_service` optional date, on or after service date when entered. |
+
+The diagram covers the application tables. Django manages admin logs, session data, content types, groups and permissions in framework tables.

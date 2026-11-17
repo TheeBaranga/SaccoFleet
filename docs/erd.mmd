@@ -1,0 +1,91 @@
+erDiagram
+    FLEET ||--o{ USER : contains
+    USER o|--o| FLEET : legacyOwner
+    FLEET ||--o{ VEHICLE : registers
+    FLEET ||--o{ DRIVER : registers
+    FLEET ||--o{ ROUTE : registers
+    FLEET ||--o{ ASSIGNMENT : owns
+    FLEET ||--o{ OPERATION_SESSION : owns
+    DRIVER ||--o{ ASSIGNMENT : drives
+    VEHICLE ||--o{ ASSIGNMENT : serves
+    ASSIGNMENT ||--o{ OPERATION_SESSION : includes
+    ROUTE ||--o{ OPERATION_SESSION : follows
+    USER ||--o{ OPERATION_SESSION : creates
+    USER ||--o{ OPERATION_SESSION : modifies
+    VEHICLE ||--o{ COLLECTION : archives
+    VEHICLE ||--o{ EXPENSE : incurs
+    EXPENSE ||--o| SERVICE_RECORD : documents
+    FLEET {
+        int id PK
+        int owner_id FK
+        string name
+    }
+    USER {
+        int id PK
+        int sacco_id FK
+        string email UK
+        string role
+    }
+    VEHICLE {
+        int id PK
+        int fleet_id FK
+        string registration
+        boolean is_active
+    }
+    DRIVER {
+        int id PK
+        int fleet_id FK
+        string name
+        boolean is_active
+    }
+    ROUTE {
+        int id PK
+        int fleet_id FK
+        string name
+        boolean is_active
+    }
+    ASSIGNMENT {
+        int id PK
+        int fleet_id FK
+        int driver_id FK
+        int vehicle_id FK
+        datetime start
+        datetime end
+    }
+    OPERATION_SESSION {
+        int id PK
+        int fleet_id FK
+        int assignment_id FK
+        int route_id FK
+        int created_by_id FK
+        int updated_by_id FK
+        datetime start
+        datetime end
+        int trip_count
+        decimal opening_km
+        decimal closing_km
+        decimal reported_collections
+    }
+    COLLECTION {
+        int id PK
+        int vehicle_id FK
+        date date
+        int amount
+    }
+    EXPENSE {
+        int id PK
+        int vehicle_id FK
+        int amount
+        date date
+    }
+    SERVICE_RECORD {
+        int id PK
+        int expense_id FK
+        string service_type
+        date next_service
+    }
+    LOGIN_BUCKET {
+        string key PK
+        int attempts
+        datetime started_at
+    }
