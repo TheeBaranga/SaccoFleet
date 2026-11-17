@@ -380,3 +380,72 @@ textarea{font:inherit;width:100%;padding:12px;border:1px solid var(--border);bor
   .account-ads { min-height: clamp(285px, 52svh, 420px); }
   .account-entry { padding: 36px 24px 48px; }
 }
+
+/* Section links live next to the work they navigate. */
+.sidebar nav a[aria-current],
+.section-nav a[aria-current],
+.profile-link[aria-current] {
+  background: #edf2e5;
+  color: var(--green);
+  font-weight: 650;
+}
+
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  margin-block-end: clamp(16px, 2.5vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.section-nav a,
+.profile-link {
+  display: flex;
+  align-items: center;
+  min-block-size: 40px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  color: var(--green);
+  font-size: .875rem;
+  text-decoration: none;
+}
+
+.section-nav a:hover,
+.profile-link:hover {
+  background: #f5f6f1;
+}
+
+.primary-nav a:focus-visible,
+.section-nav a:focus-visible,
+.profile-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+@media (max-width: 760px) {
+  .sidebar .primary-nav {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .sidebar .primary-nav a {
+    flex: 1 1 8rem;
+    min-inline-size: 0;
+    white-space: normal;
+    padding-inline: 8px;
+  }
+
+  .profile {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .section-nav a {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
