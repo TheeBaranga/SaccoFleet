@@ -8,7 +8,7 @@
       {% empty %}
       <tr><td colspan="5" class="empty-state">
         {% if query %}<h3>No vehicles found</h3><p>Try another registration, driver or route.</p><a href="{% url 'vehicles' %}">Clear search</a>
-        {% else %}<h3>No vehicles yet</h3><p>Add your first vehicle to start managing your fleet.</p><a href="{% url 'add_vehicle' %}">Add a vehicle</a>{% endif %}
+        {% else %}<h3>No vehicles yet</h3><p>Add your first vehicle to start managing your fleet.</p>{% if request.user.is_sacco_manager %}<a href="{% url 'add_vehicle' %}">Add a vehicle</a>{% endif %}{% endif %}
       </td></tr>
       {% endfor %}
     </tbody>

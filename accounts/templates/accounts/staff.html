@@ -1,0 +1,35 @@
+{% extends 'app.html' %}
+{% block title %}Staff accounts | SaccoFleet{% endblock %}
+{% block page_content %}
+<header class="page-heading"><div><h1>Staff accounts</h1><p class="subtitle">{{ request.user.sacco.name }}</p></div></header>
+<form method="post" class="entry-panel">
+  {% csrf_token %}
+  <h2>Create an operations staff account</h2>
+  <div class="form-grid">{{ form.as_div }}</div>
+  <button class="primary" type="submit">Create account</button>
+</form>
+<section class="table-panel" aria-labelledby="staff-list">
+  <div class="panel-heading"><h2 id="staff-list">Operations staff</h2></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th scope="col">Email</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
+      <tbody>
+        {% for account in staff %}
+          <tr>
+            <th scope="row">{{ account.email }}</th>
+            <td>{{ account.is_active|yesno:"Active,Deactivated" }}</td>
+            <td>{% if account.is_active %}
+              <form method="post" action="{% url 'deactivate_staff' account.pk %}">
+                {% csrf_token %}
+                <button class="secondary" type="submit" aria-label="Deactivate {{ account.email }}">Deactivate</button>
+              </form>
+            {% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="empty-state">No operations staff accounts.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

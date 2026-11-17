@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from .models import Collection, Expense, Fleet, ServiceRecord, Vehicle
+from .models import Collection, Expense, ServiceRecord, Vehicle
 
 
 class DemoFeatureTests(TestCase):
@@ -14,8 +14,8 @@ class DemoFeatureTests(TestCase):
     def setUpTestData(cls):
         cls.owner = get_user_model().objects.create_user('demo@example.com', 'test-password')
         other = get_user_model().objects.create_user('other-demo@example.com', 'test-password')
-        cls.vehicle = Vehicle.objects.create(fleet=Fleet.objects.create(owner=cls.owner), registration='KDA123A')
-        cls.foreign = Vehicle.objects.create(fleet=Fleet.objects.create(owner=other), registration='PRIVATE')
+        cls.vehicle = Vehicle.objects.create(fleet=cls.owner.sacco, registration='KDA123A')
+        cls.foreign = Vehicle.objects.create(fleet=other.sacco, registration='PRIVATE')
 
     def setUp(self):
         self.client.force_login(self.owner)

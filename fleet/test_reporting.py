@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from .forms import DateRangeForm
-from .models import Collection, Expense, Fleet, Vehicle
+from .models import Collection, Expense, Vehicle
 from .presentation import cash_flow
 
 
@@ -13,10 +13,10 @@ class ReportingTests(TestCase):
     def setUpTestData(cls):
         cls.owner = get_user_model().objects.create_user('reports@example.com', 'test-password')
         other = get_user_model().objects.create_user('foreign@example.com', 'test-password')
-        fleet = Fleet.objects.create(owner=cls.owner)
+        fleet = cls.owner.sacco
         cls.vehicle = Vehicle.objects.create(fleet=fleet, registration='KDA100A')
         cls.second = Vehicle.objects.create(fleet=fleet, registration='KDA200A')
-        cls.foreign = Vehicle.objects.create(fleet=Fleet.objects.create(owner=other), registration='PRIVATE999')
+        cls.foreign = Vehicle.objects.create(fleet=other.sacco, registration='PRIVATE999')
 
     def setUp(self):
         self.client.force_login(self.owner)

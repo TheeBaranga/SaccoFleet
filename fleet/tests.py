@@ -15,8 +15,8 @@ class FleetDashboardTests(TestCase):
     def setUpTestData(cls):
         cls.owner = User.objects.create_user("owner@example.com", "test-password")
         cls.other = User.objects.create_user("other@example.com", "test-password")
-        cls.fleet = Fleet.objects.create(owner=cls.owner)
-        cls.other_fleet = Fleet.objects.create(owner=cls.other)
+        cls.fleet = cls.owner.sacco
+        cls.other_fleet = cls.other.sacco
 
     def setUp(self):
         self.client.force_login(self.owner)
@@ -307,15 +307,15 @@ class FleetDashboardTests(TestCase):
 
 
 class NewFleetTests(TestCase):
-    def test_reading_dashboard_does_not_create_records_and_first_vehicle_sets_up_fleet(self):
+    def test_first_vehicle_uses_existing_sacco(self):
         user = User.objects.create_user("new@example.com", "test-password")
         self.client.force_login(user)
         self.assertContains(self.client.get(reverse("dashboard")), "No vehicles yet")
-        self.assertFalse(Fleet.objects.exists())
+        self.assertEqual(Fleet.objects.count(), 1)
         self.assertContains(self.client.get(reverse("record_collection")), "Add a vehicle first")
         self.client.get(reverse("add_vehicle"))
-        self.assertFalse(Fleet.objects.exists())
+        self.assertEqual(Fleet.objects.count(), 1)
         response = self.client.post(reverse("add_vehicle"), {"registration": "KDA284K", "capacity": 14, "status": "idle"})
         self.assertRedirects(response, reverse("dashboard"))
-        self.assertEqual(Fleet.objects.get().owner, user)
+        self.assertEqual(Vehicle.objects.get().fleet_id, user.sacco_id)
         self.assertEqual(Vehicle.objects.count(), 1)

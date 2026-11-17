@@ -11,7 +11,7 @@ def normalize_registration(value):
 
 
 class Fleet(models.Model):
-    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="fleet")
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="owned_fleet")
     name = models.CharField(max_length=100, default="Sacco Fleet")
 
     def __str__(self):

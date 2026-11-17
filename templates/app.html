@@ -8,13 +8,16 @@
     <nav aria-label="Main navigation">
       <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>{% include 'icon.html' with name='dashboard' %}<span>Dashboard</span></a>
       <a href="{% url 'vehicles' %}" {% if request.resolver_match.url_name == 'vehicles' or request.resolver_match.url_name == 'add_vehicle' or request.resolver_match.url_name == 'vehicle_detail' or request.resolver_match.url_name == 'edit_vehicle' or request.resolver_match.url_name == 'delete_vehicle' %}aria-current="page"{% endif %}>{% include 'icon.html' with name='vehicles' %}<span>Vehicles</span></a>
+      {% if request.user.is_sacco_manager %}
       <a href="{% url 'collections' %}" {% if request.resolver_match.url_name == 'collections' or request.resolver_match.url_name == 'record_collection' or request.resolver_match.url_name == 'edit_collection' or request.resolver_match.url_name == 'delete_collection' %}aria-current="page"{% endif %}>{% include 'icon.html' with name='collections' %}<span>Collections</span></a>
       <a href="{% url 'expenses' %}" {% if request.resolver_match.url_name == 'expenses' or request.resolver_match.url_name == 'add_expense' or request.resolver_match.url_name == 'edit_expense' or request.resolver_match.url_name == 'delete_expense' %}aria-current="page"{% endif %}>{% include 'icon.html' with name='expenses' %}<span>Expenses</span></a>
       <a href="{% url 'maintenance' %}" {% if request.resolver_match.url_name == 'maintenance' %}aria-current="page"{% endif %}>{% include 'icon.html' with name='maintenance' %}<span>Maintenance</span></a>
       <a href="{% url 'reports' %}" {% if request.resolver_match.url_name == 'reports' %}aria-current="page"{% endif %}>{% include 'icon.html' with name='reports' %}<span>Reports</span></a>
+      <a href="{% url 'manage_staff' %}" {% if request.resolver_match.url_name == 'manage_staff' %}aria-current="page"{% endif %}><span>Staff accounts</span></a>
+      {% endif %}
     </nav>
     <div class="profile">
-      <div class="user-card"><span class="avatar">{{ request.user.email|first|upper }}</span><div><strong>{{ request.user.email|cut:"@gmail.com" }}</strong><small>Fleet administrator</small></div></div>
+      <div class="user-card"><span class="avatar">{{ request.user.email|first|upper }}</span><div><strong>{{ request.user.email|cut:"@gmail.com" }}</strong><small>{{ request.user.get_role_display }}</small></div></div>
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="link-button">{% include 'icon.html' with name='logout' %} Sign out</button></form>
     </div>
   </aside>

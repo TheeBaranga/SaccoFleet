@@ -1,7 +1,7 @@
 {% extends 'app.html' %}
 {% block title %}Vehicles | Sacco Fleet{% endblock %}
 {% block page_content %}
-<header class="page-heading"><div><p class="eyebrow">Fleet</p><h1>Vehicles</h1><p class="subtitle">Every vehicle, in one place.</p></div><a class="primary action-link" href="{% url 'add_vehicle' %}">+ Add vehicle</a></header>
+<header class="page-heading"><div><p class="eyebrow">Fleet</p><h1>Vehicles</h1><p class="subtitle">Every vehicle, in one place.</p></div>{% if request.user.is_sacco_manager %}<a class="primary action-link" href="{% url 'add_vehicle' %}">+ Add vehicle</a>{% endif %}</header>
 <dl class="stats">{% include 'stat.html' with label='Total vehicles' value=summary.total icon='vehicles' %}{% include 'stat.html' with label='On the road' value=summary.active icon='vehicles' %}{% include 'stat.html' with label='In maintenance' value=summary.maintenance icon='maintenance' %}</dl><form class="search-form" method="get" action="{% url 'vehicles' %}">
   <label class="visually-hidden" for="vehicle-search">Search vehicles</label>
   <input id="vehicle-search" type="search" name="q" value="{{ query }}" placeholder="Search registration, make, driver or route" maxlength="100">

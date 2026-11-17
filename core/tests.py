@@ -26,12 +26,12 @@ class PremiumDashboardTests(TestCase):
     def test_financial_summaries_and_chart_exclude_other_owners(self):
         from datetime import timedelta
         from django.utils import timezone
-        from fleet.models import Fleet, Vehicle, Collection, Expense
+        from fleet.models import Vehicle, Collection, Expense
         today = timezone.localdate()
         owner = get_user_model().objects.create_user('design@example.com', 'test-password')
         other = get_user_model().objects.create_user('other@example.com', 'test-password')
-        vehicle = Vehicle.objects.create(fleet=Fleet.objects.create(owner=owner), registration='KDA284K', status='active', next_service=today-timedelta(days=1))
-        foreign = Vehicle.objects.create(fleet=Fleet.objects.create(owner=other), registration='OTHER')
+        vehicle = Vehicle.objects.create(fleet=owner.sacco, registration='KDA284K', status='active', next_service=today-timedelta(days=1))
+        foreign = Vehicle.objects.create(fleet=other.sacco, registration='OTHER')
         Collection.objects.create(vehicle=vehicle, date=today, amount=5000)
         Expense.objects.create(vehicle=vehicle, date=today, amount=1200)
         Collection.objects.create(vehicle=foreign, date=today, amount=999999)

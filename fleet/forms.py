@@ -25,7 +25,7 @@ class VehicleForm(forms.ModelForm):
 
     def clean_registration(self):
         registration = normalize_registration(self.cleaned_data["registration"])
-        duplicates = Vehicle.objects.filter(fleet__owner=self.owner, registration__iexact=registration).exclude(pk=self.instance.pk)
+        duplicates = Vehicle.objects.filter(fleet_id=self.owner.sacco_id, registration__iexact=registration).exclude(pk=self.instance.pk)
         if duplicates.exists():
             raise forms.ValidationError("This registration is already in your fleet.")
         return registration
@@ -40,7 +40,7 @@ class CollectionForm(forms.ModelForm):
 
     def __init__(self, *args, owner, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["vehicle"].queryset = Vehicle.objects.filter(fleet__owner=owner)
+        self.fields["vehicle"].queryset = Vehicle.objects.filter(fleet_id=owner.sacco_id)
         self.fields["vehicle"].empty_label = "Choose a vehicle"
 
 
@@ -57,7 +57,7 @@ class ExpenseForm(forms.ModelForm):
 
     def __init__(self, *args, owner, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["vehicle"].queryset = Vehicle.objects.filter(fleet__owner=owner)
+        self.fields["vehicle"].queryset = Vehicle.objects.filter(fleet_id=owner.sacco_id)
         self.fields["vehicle"].empty_label = "Choose a vehicle"
 
 

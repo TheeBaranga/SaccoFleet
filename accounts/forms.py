@@ -29,7 +29,7 @@ class EmailAuthenticationForm(AuthenticationForm):
     def clean_username(self):
         return self.cleaned_data["username"].strip().lower()
 
-class SignUpForm(BaseUserCreationForm):
+class StaffAccountForm(BaseUserCreationForm):
     email = forms.EmailField(
         label="Email address",
         max_length=254,

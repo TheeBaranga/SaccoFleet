@@ -1,8 +1,8 @@
 {% extends 'app.html' %}{% load humanize %}
 {% block title %}Dashboard | SaccoFleet{% endblock %}
 {% block page_content %}
-<header class="page-heading"><div><p class="eyebrow">Overview</p><h1>Your fleet, at a glance.</h1><p class="subtitle">{{ today|date:"l, j F Y" }}</p></div><div class="page-actions"><a class="secondary action-link" href="{% url 'add_expense' %}">+ Record expense</a><a class="primary action-link" href="{% url 'record_collection' %}">+ Record collection</a></div></header>
-{% include 'date_range.html' %}
+<header class="page-heading"><div><p class="eyebrow">Overview</p><h1>Your fleet, at a glance.</h1><p class="subtitle">{{ today|date:"l, j F Y" }}</p></div>{% if request.user.is_sacco_manager %}<div class="page-actions"><a class="secondary action-link" href="{% url 'add_expense' %}">+ Record expense</a><a class="primary action-link" href="{% url 'record_collection' %}">+ Record collection</a></div>{% endif %}</header>
+{% if request.user.is_sacco_manager %}{% include 'date_range.html' %}{% endif %}
 {% if period_valid %}
 <dl class="stats stats-four" aria-label="Fleet summary">
 {% include 'stat.html' with label='Total vehicles' value=total_vehicles icon='vehicles' %}

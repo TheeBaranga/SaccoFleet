@@ -3,18 +3,19 @@ from email import policy
 from email.parser import BytesParser
 from urllib.parse import urlsplit
 from django.conf import settings
-from django.contrib.auth import login
+from django.contrib import messages
 from django.db import IntegrityError, transaction
 from django.http import Http404
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView
-from django.views.generic.edit import FormView
 from core.context_processors import can_read_demo_inbox
-from .forms import EmailAuthenticationForm, SignUpForm
+from .forms import EmailAuthenticationForm, StaffAccountForm
+from .models import User
+from .permissions import manager_required
 from .rate_limit import reserve_attempt, release_attempt, WINDOW_SECONDS
 
 
@@ -42,37 +43,44 @@ class SignInView(LoginView):
         return response
 
 
-@method_decorator([never_cache, sensitive_post_parameters("password1", "password2")], name="dispatch")
-class SignUpView(FormView):
-    template_name = "accounts/login.html"
-    form_class = SignUpForm
-    extra_context = {"registering": True}
+def staff_accounts(manager):
+    return User.objects.filter(sacco_id=manager.sacco_id, role=User.Role.OPERATIONS)
 
-    def post(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            return redirect("dashboard")
-        if reserve_attempt(
-            request.POST.get("email", ""), request.META.get("REMOTE_ADDR", "unknown"),
-            namespace="signup",
-        ) is None:
-            response = self.render_to_response(
-                self.get_context_data(form=self.get_form_class()(), throttled=True), status=429,
-            )
-            response["Retry-After"] = str(WINDOW_SECONDS)
-            return response
-        return super().post(request, *args, **kwargs)
 
-    def form_valid(self, form):
+@never_cache
+@manager_required
+@sensitive_post_parameters("password1", "password2")
+@require_http_methods(["GET", "POST"])
+def manage_staff(request):
+    form = StaffAccountForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST" and form.is_valid():
         try:
             with transaction.atomic():
-                user = form.save()
+                account = form.save(commit=False)
+                account.sacco_id = request.user.sacco_id
+                account.role = User.Role.OPERATIONS
+                account.save()
         except IntegrityError:
-            if not form._meta.model.objects.filter(email__iexact=form.cleaned_data["email"]).exists():
+            if not User.objects.filter(email__iexact=form.cleaned_data["email"]).exists():
                 raise
             form.add_error("email", "An account already uses this email address.")
-            return self.form_invalid(form)
-        login(self.request, user)
-        return redirect("dashboard")
+        else:
+            messages.success(request, "Staff account created.")
+            return redirect("manage_staff")
+    return render(request, "accounts/staff.html", {
+        "form": form, "staff": staff_accounts(request.user).order_by("email"),
+    })
+
+
+@never_cache
+@manager_required
+@require_POST
+def deactivate_staff(request, pk):
+    account = get_object_or_404(staff_accounts(request.user), pk=pk)
+    account.is_active = False
+    account.save(update_fields=["is_active"])
+    messages.success(request, "Staff account deactivated.")
+    return redirect("manage_staff")
 
 
 class SignOutView(LogoutView):

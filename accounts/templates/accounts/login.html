@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}{% if registering %}Create an account{% else %}Sign in{% endif %} | Sacco Fleet{% endblock %}
+{% block title %}Sign in | Sacco Fleet{% endblock %}
 {% block body_class %}sign-in-page{% endblock %}
 {% block content %}
 <main class="account-sheet">
@@ -38,14 +38,9 @@
   </section>
   <section class="account-entry" aria-labelledby="account-title">
     <div class="account-form">
-      <p class="account-kicker">{% if registering %}Get started{% else %}Sign in{% endif %}</p>
-      {% if registering %}
-        <h1 id="account-title">Create an account</h1>
-        <p>Already have an account? <a href="{% url 'login' %}">Log in</a></p>
-      {% else %}
-        <h1 id="account-title">Welcome back</h1>
-        <p>New to SaccoFleet? <a href="{% url 'signup' %}">Create an account</a></p>
-      {% endif %}
+      <p class="account-kicker">Sign in</p>
+      <h1 id="account-title">Welcome back</h1>
+      <p>Use the account provided by your SACCO manager.</p>
       {% if throttled %}
         <p class="alert" role="alert">Too many attempts. Please wait 10 minutes and try again.</p>
       {% elif form.non_field_errors %}
@@ -54,22 +49,10 @@
       <form method="post" novalidate>
         {% csrf_token %}
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-        {% if registering %}
-          <div class="account-names">
-            {% include 'accounts/account_field.html' with field=form.first_name %}
-            {% include 'accounts/account_field.html' with field=form.last_name %}
-          </div>
-        {% endif %}
-        {% if registering %}
-          {% include 'accounts/account_field.html' with field=form.email %}
-          {% include 'accounts/account_field.html' with field=form.password1 reveal=True %}
-          {% include 'accounts/account_field.html' with field=form.password2 %}
-        {% else %}
-          {% include 'accounts/account_field.html' with field=form.username %}
-          {% include 'accounts/account_field.html' with field=form.password reveal=True recovery=True %}
-          <label class="account-remember">{{ form.remember_me }} {{ form.remember_me.label }}</label>
-        {% endif %}
-        <button class="primary sign-in" type="submit">{% if registering %}Create account{% else %}Sign in{% endif %}</button>
+        {% include 'accounts/account_field.html' with field=form.username %}
+        {% include 'accounts/account_field.html' with field=form.password reveal=True recovery=True %}
+        <label class="account-remember">{{ form.remember_me }} {{ form.remember_me.label }}</label>
+        <button class="primary sign-in" type="submit">Sign in</button>
       </form>
     </div>
   </section>

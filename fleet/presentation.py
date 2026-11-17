@@ -5,7 +5,7 @@ from .models import Collection, Expense, Vehicle
 
 
 def vehicle_summary(owner):
-    return Vehicle.objects.filter(fleet__owner=owner).aggregate(
+    return Vehicle.objects.filter(fleet_id=owner.sacco_id).aggregate(
         total=Count("pk"), active=Count("pk", filter=Q(status="active")),
         idle=Count("pk", filter=Q(status="idle")), maintenance=Count("pk", filter=Q(status="maintenance")))
 
@@ -45,7 +45,7 @@ def cash_flow(owner, today, start=None, vehicle=None):
         return day.replace(day=1)
 
     def daily(model):
-        records = model.objects.filter(vehicle__fleet__owner=owner, date__range=(start, today))
+        records = model.objects.filter(vehicle__fleet_id=owner.sacco_id, date__range=(start, today))
         if vehicle is not None:
             records = records.filter(vehicle=vehicle)
         return dict(records.order_by().annotate(bucket=trunc("date") if trunc else F("date"))

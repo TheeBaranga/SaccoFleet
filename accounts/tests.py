@@ -118,14 +118,12 @@ class LoginFlowTests(TestCase):
         response = self.client.post(reverse("login"), self.credentials(next="/dashboard/?view=all"))
         self.assertRedirects(response, "/dashboard/?view=all")
 
-    def test_account_pages_do_not_reveal_session_status_via_redirects(self):
-        for route in ("login", "signup"):
-            self.assertEqual(self.client.get(reverse(route)).status_code, 200)
+    def test_login_page_does_not_reveal_session_status_via_redirects(self):
+        self.assertEqual(self.client.get(reverse("login")).status_code, 200)
         self.client.force_login(self.user)
-        for route in ("login", "signup"):
-            response = self.client.get(reverse(route))
-            self.assertEqual(response.status_code, 200)
-            self.assertIn("no-store", response["Cache-Control"])
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("no-store", response["Cache-Control"])
 
     def test_sign_out_rejects_get_and_clears_the_server_session(self):
         self.client.force_login(self.user)

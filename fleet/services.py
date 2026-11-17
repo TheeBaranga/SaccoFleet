@@ -5,7 +5,7 @@ from .models import Expense, ServiceRecord, Vehicle
 
 @transaction.atomic
 def save_service(form, owner, record=None):
-    vehicle = Vehicle.objects.select_for_update().get(pk=form.cleaned_data["vehicle"].pk, fleet__owner=owner)
+    vehicle = Vehicle.objects.select_for_update().get(pk=form.cleaned_data["vehicle"].pk, fleet_id=owner.sacco_id)
     expense = form.save(commit=False)
     expense.category = Expense.Category.REPAIRS
     expense.note = form.cleaned_data["service_type"]
