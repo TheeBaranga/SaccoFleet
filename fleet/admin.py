@@ -28,7 +28,14 @@ class VehicleAdmin(admin.ModelAdmin):
 class CollectionAdmin(admin.ModelAdmin):
     list_display = ("vehicle", "amount", "date")
     list_filter = ("date",)
-    autocomplete_fields = ("vehicle",)
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Expense)

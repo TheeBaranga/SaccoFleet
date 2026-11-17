@@ -26,20 +26,21 @@ class PremiumDashboardTests(TestCase):
     def test_financial_summaries_and_chart_exclude_other_owners(self):
         from datetime import timedelta
         from django.utils import timezone
-        from fleet.models import Vehicle, Collection, Expense
+        from fleet.models import Vehicle, Expense
+        from fleet.reporting_test_data import make_session
         today = timezone.localdate()
         owner = get_user_model().objects.create_user('design@example.com', 'test-password')
         other = get_user_model().objects.create_user('other@example.com', 'test-password')
         vehicle = Vehicle.objects.create(fleet=owner.sacco, registration='KDA284K', status='active', next_service=today-timedelta(days=1))
         foreign = Vehicle.objects.create(fleet=other.sacco, registration='OTHER')
-        Collection.objects.create(vehicle=vehicle, date=today, amount=5000)
+        make_session(vehicle, today, 5000)
         Expense.objects.create(vehicle=vehicle, date=today, amount=1200)
-        Collection.objects.create(vehicle=foreign, date=today, amount=999999)
+        make_session(foreign, today, 999999)
         Expense.objects.create(vehicle=foreign, date=today, amount=999999)
         self.client.force_login(owner)
         response = self.client.get(reverse('dashboard'))
-        self.assertEqual(response.context['profit'], 3800)
-        self.assertEqual(response.context['todays_expenses'], 1200)
+        self.assertEqual(response.context['difference'], 3800)
+        self.assertEqual(response.context['period_out'], 1200)
         self.assertEqual(response.context['summary']['active'], 1)
         self.assertEqual(response.context['chart'][-1]['collected'], 5000)
         self.assertEqual(list(response.context['reminders']), [vehicle])

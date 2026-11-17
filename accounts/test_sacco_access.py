@@ -53,7 +53,7 @@ class FR1SaccoAccessTests(TestCase):
         self.assertNotContains(response, self.foreign.registration)
         self.assertEqual(self.client.get(reverse("vehicle_detail", args=[self.foreign.pk])).status_code, 404)
         self.assertNotContains(self.client.get(reverse("vehicle_detail", args=[self.vehicle.pk])), "Financial performance")
-        for route, args in (("add_vehicle", []), ("edit_vehicle", [self.vehicle.pk]), ("delete_vehicle", [self.vehicle.pk]), ("record_collection", []), ("add_expense", []), ("record_service", [])):
+        for route, args in (("add_vehicle", []), ("edit_vehicle", [self.vehicle.pk]), ("delete_vehicle", [self.vehicle.pk]), ("add_expense", []), ("record_service", [])):
             with self.subTest(route=route):
                 self.assertEqual(self.client.post(reverse(route, args=args), {"registration": "FORGED"}).status_code, 403)
         for route in ("collections", "expenses", "maintenance", "reports"):

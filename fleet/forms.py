@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.utils import timezone
 from django import forms
-from .models import Collection, Expense, Vehicle, normalize_registration
+from .models import Expense, Vehicle, normalize_registration
 
 
 class VehicleForm(forms.ModelForm):
@@ -29,19 +29,6 @@ class VehicleForm(forms.ModelForm):
         if duplicates.exists():
             raise forms.ValidationError("This registration is already in your fleet.")
         return registration
-
-
-class CollectionForm(forms.ModelForm):
-    class Meta:
-        model = Collection
-        fields = ["vehicle", "amount", "date"]
-        labels = {"amount": "Amount (KSh)", "date": "Collection date"}
-        widgets = {"amount": forms.NumberInput(attrs={"min": 1, "step": 1}), "date": forms.DateInput(attrs={"type": "date"})}
-
-    def __init__(self, *args, owner, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["vehicle"].queryset = Vehicle.objects.filter(fleet_id=owner.sacco_id)
-        self.fields["vehicle"].empty_label = "Choose a vehicle"
 
 
 class ExpenseForm(forms.ModelForm):

@@ -88,7 +88,7 @@ class OperationsTests(TestCase):
         self.assertEqual((record.fleet_id, record.created_by, record.updated_by),
                          (self.manager.sacco_id, self.staff, self.staff))
         self.assertEqual(record.start, time_at(8))
-        self.assertContains(self.client.get(reverse("daily_operations")), "140.00 km")
+        self.assertContains(self.client.get(reverse("daily_operations"), {"period": "custom", "start": "2026-11-16", "end": "2026-11-16"}), "140.00 km")
 
     def test_fr5_rejects_invalid_sessions_and_preserves_input(self):
         for changes, field, message in (
@@ -114,7 +114,7 @@ class OperationsTests(TestCase):
         self.assertFormError(response.context["form"], "start", "This vehicle already has an overlapping session.")
         self.assertEqual(self.record_session(start="2026-11-16T10:00", end="2026-11-16T12:00",
                                             opening_km="80150", closing_km="80210").status_code, 302)
-        self.assertContains(self.client.get(reverse("daily_operations")), "Gap to review")
+        self.assertContains(self.client.get(reverse("daily_operations"), {"period": "custom", "start": "2026-11-16", "end": "2026-11-16"}), "Gap to review")
         latest = OperationSession.objects.first()
         self.assertContains(self.client.get(reverse("operation_detail", args=[latest.pk])), "Odometer gap to review")
         self.assertEqual(latest.opening_km, Decimal("80150"))
@@ -173,7 +173,7 @@ class OperationsTests(TestCase):
         for field, pk in (("assignment", self.foreign_assignment.pk), ("route", self.foreign_route.pk)):
             response = self.record_session(**{field: pk})
             self.assertIn(field, response.context["form"].errors)
-        self.assertNotContains(self.client.get(reverse("daily_operations")), self.foreign_vehicle.registration)
+        self.assertNotContains(self.client.get(reverse("daily_operations"), {"period": "custom", "start": "2026-11-16", "end": "2026-11-16"}), self.foreign_vehicle.registration)
         self.client.force_login(self.staff)
         for endpoint in ("add_drivers", "add_routes", "add_assignment"):
             self.assertEqual(self.client.post(reverse(endpoint), {}).status_code, 403)

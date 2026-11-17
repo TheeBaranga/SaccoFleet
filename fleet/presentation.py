@@ -1,7 +1,8 @@
 """Shared, owner-scoped summaries for dashboard and finance pages."""
 from datetime import timedelta
 from django.db.models import Count, F, Q, Sum
-from .models import Collection, Expense, Vehicle
+from .models import Expense, Vehicle
+from .operational_reporting import NAIROBI, sessions_for_period
 
 
 def vehicle_summary(owner):
@@ -32,7 +33,7 @@ def reporting_period(params):
 
 def cash_flow(owner, today, start=None, vehicle=None):
     """At most 14 daily/weekly/monthly buckets, using two grouped queries."""
-    from django.db.models.functions import TruncWeek, TruncMonth
+    from django.db.models.functions import TruncWeek, TruncMonth, TruncDate
     start = start or today - timedelta(days=6)
     days = (today-start).days + 1
     trunc = None if days <= 14 else TruncWeek if days <= 90 else TruncMonth
@@ -44,14 +45,22 @@ def cash_flow(owner, today, start=None, vehicle=None):
             return day - timedelta(days=day.weekday())
         return day.replace(day=1)
 
-    def daily(model):
-        records = model.objects.filter(vehicle__fleet_id=owner.sacco_id, date__range=(start, today))
-        if vehicle is not None:
-            records = records.filter(vehicle=vehicle)
-        return dict(records.order_by().annotate(bucket=trunc("date") if trunc else F("date"))
-                    .values_list("bucket").annotate(total=Sum("amount")))
+    sessions = sessions_for_period(owner.sacco_id, {"range_start": start, "range_end": today})
+    expenses = Expense.objects.filter(vehicle__fleet_id=owner.sacco_id, date__range=(start, today))
+    if vehicle is not None:
+        sessions = sessions.filter(assignment__vehicle=vehicle)
+        expenses = expenses.filter(vehicle=vehicle)
+    session_bucket = TruncDate("start", tzinfo=NAIROBI)
+    expense_bucket = F("date")
+    if trunc:
+        session_bucket = trunc(session_bucket)
+        expense_bucket = trunc(expense_bucket)
 
-    incoming, outgoing = daily(Collection), daily(Expense)
+    def grouped(records, grouping, field):
+        return dict(records.order_by().annotate(bucket=grouping).values_list("bucket").annotate(total=Sum(field)))
+
+    incoming = grouped(sessions, session_bucket, "reported_collections")
+    outgoing = grouped(expenses, expense_bucket, "amount")
     largest = max([*incoming.values(), *outgoing.values(), 1])
     buckets = sorted({bucket(start+timedelta(days=i)) for i in range(days)})
     return [{"day": day, "label": max(day, start).strftime("%d %b") if days <= 90 else day.strftime("%b %Y"),

@@ -5,7 +5,7 @@
 <a class="back-link" href="{% url 'vehicles' %}">← Back to vehicles</a>
 <header class="page-heading">
   <div class="title-row"><h1>{{ vehicle.registration }}</h1><span class="badge badge-{{ vehicle.status }}">{% if vehicle.is_active %}{{ vehicle.get_status_display }}{% else %}Deactivated{% endif %}</span></div>
-  {% if request.user.is_sacco_manager %}<div class="page-actions"><a class="secondary action-link" href="{% url 'record_service' %}?vehicle={{ vehicle.pk }}">+ Record service</a><a class="primary action-link" href="{% url 'record_collection' %}?vehicle={{ vehicle.pk }}">+ Record collection</a><a class="secondary action-link" href="{% url 'add_expense' %}?vehicle={{ vehicle.pk }}">+ Record expense</a><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a>{% if vehicle.is_active %}<a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Deactivate</a>{% endif %}</div>
+  {% if request.user.is_sacco_manager %}<div class="page-actions"><a class="secondary action-link" href="{% url 'record_service' %}?vehicle={{ vehicle.pk }}">+ Record service</a><a class="primary action-link" href="{% url 'add_operation' %}?vehicle={{ vehicle.pk }}">+ Record session</a><a class="secondary action-link" href="{% url 'add_expense' %}?vehicle={{ vehicle.pk }}">+ Record expense</a><a class="secondary action-link" href="{% url 'edit_vehicle' vehicle.pk %}">Edit vehicle</a>{% if vehicle.is_active %}<a class="secondary action-link danger-link" href="{% url 'delete_vehicle' vehicle.pk %}">Deactivate</a>{% endif %}</div>
   {% endif %}
 </header>
 <section class="detail-panel" aria-labelledby="basic-heading">
@@ -34,7 +34,15 @@
     {% include 'financial_stats.html' %}
     {% include 'cash_flow.html' %}
     <div class="vehicle-history">
-      {% include 'fleet/financial_history.html' with records=recent_vehicle_collections kind='collections' heading='Recent collections' %}
+      <section class="table-panel">
+        <div class="panel-heading"><h2>Recent operation sessions</h2><a href="{{ source_url }}">View all</a></div>
+        <div class="table-scroll"><table>
+          <thead><tr><th scope="col">Start (EAT)</th><th scope="col">Reported collections</th></tr></thead>
+          <tbody>{% for session in recent_vehicle_sessions %}
+            <tr><th scope="row"><a href="{% url 'operation_detail' session.pk %}">{{ session.start|date:"j M Y, H:i" }}</a></th><td>KSh {{ session.reported_collections|intcomma }}</td></tr>
+          {% empty %}<tr><td colspan="2">No operation sessions found for this period.</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </section>
       {% include 'fleet/financial_history.html' with records=recent_vehicle_expenses kind='expenses' heading='Recent expenses' %}
     </div>
   {% endif %}

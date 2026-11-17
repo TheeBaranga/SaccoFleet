@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from .models import Collection, Expense, ServiceRecord, Vehicle
+from .reporting_test_data import make_session
 
 
 class DemoFeatureTests(TestCase):
@@ -91,7 +92,7 @@ class DemoFeatureTests(TestCase):
             Collection.objects.create(vehicle=self.vehicle, date=self.today, amount=i+1)
         Collection.objects.create(vehicle=self.vehicle, date=self.today-timedelta(days=1), amount=888888)
         Collection.objects.create(vehicle=self.foreign, date=self.today, amount=999999)
-        rows = self.read_csv('collections', {'q': 'KDA123A', 'period': 'today', 'page': 2})
+        rows = self.read_csv('legacy_collections', {'q': 'KDA123A', 'period': 'today', 'page': 2})
         self.assertEqual(len(rows), 24)
         self.assertEqual(rows[1][2], '\'=HYPERLINK("bad")')
         self.assertNotIn('999999', str(rows))
@@ -102,12 +103,12 @@ class DemoFeatureTests(TestCase):
         self.assertEqual(rows[1][4], '150')
 
     def test_report_export_matches_filtered_summary_and_requires_login(self):
-        Collection.objects.create(vehicle=self.vehicle, amount=2000)
+        make_session(self.vehicle, self.today, 2000)
         Expense.objects.create(vehicle=self.vehicle, amount=500)
-        Collection.objects.create(vehicle=self.vehicle, amount=10000, date=self.today-timedelta(days=30))
+        make_session(self.vehicle, self.today-timedelta(days=30), 10000)
         self.assertEqual(len(self.read_csv('reports', {})), 2)
         rows = self.read_csv('reports', {'period': 'today'})
-        self.assertEqual(rows[1][2:], ['KDA123A', '2000', '500', '1500'])
+        self.assertEqual(rows[1][3:], ['KDA123A', f'Fictional driver {self.vehicle.pk}', 'Fictional route', '1', '10.00', '2000.00'])
         response = self.client.get(reverse('reports'), {'format': 'csv', 'period': 'custom', 'start': 'bad'})
         self.assertFalse(response.context['period_valid'])
         self.assertNotIn('Content-Disposition', response)

@@ -5,11 +5,15 @@
   <div><h1>Daily operations</h1><p class="subtitle">Trips, distance and staff-reported collections.</p></div>
   <a class="primary action-link" href="{% url 'add_operation' %}">Record session</a>
 </header>
+{% if filter_vehicle %}<p>Vehicle {{ filter_vehicle.registration }} · <a href="{% url 'daily_operations' %}">Clear vehicle filter</a></p>{% endif %}
+{% include 'date_range.html' %}
+{% if period_valid %}
+<div class="page-actions">{% include 'csv_link.html' %}</div>
 <section class="table-panel" aria-label="Operation sessions">
-  <div class="table-scroll"><table>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Operation sessions table"><table>
     <thead><tr><th scope="col">Session start (EAT)</th><th scope="col">Vehicle</th><th scope="col">Route</th><th scope="col">Trips</th><th scope="col">Distance</th><th scope="col">Reported collections</th><th scope="col">Odometer</th></tr></thead>
     <tbody>
-      {% for record in records %}
+      {% for record in page_obj %}
         <tr>
           <th scope="row"><a href="{% url 'operation_detail' record.pk %}">{{ record.start|date:"j M Y, H:i" }}</a></th>
           <td>{{ record.assignment.vehicle }}</td><td>{{ record.route.name }}</td><td>{{ record.trip_count }}</td>
@@ -17,9 +21,11 @@
           <td>{% if record.previous_closing_km != None and record.previous_closing_km != record.opening_km %}<span class="badge badge-maintenance">Gap to review</span>{% else %}—{% endif %}</td>
         </tr>
       {% empty %}
-        <tr><td colspan="7" class="empty-state">No operation sessions recorded yet.</td></tr>
+        <tr><td colspan="7" class="empty-state">No operation sessions found for this period.</td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
+{% include 'report_pagination.html' %}
+{% endif %}
 {% endblock %}

@@ -1,7 +1,9 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import OuterRef, Subquery
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
@@ -9,8 +11,10 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from accounts.permissions import manager_required
 
-from .models import Assignment, Driver, OperationSession, Route
+from .models import Assignment, Driver, OperationSession, Route, Vehicle
 from .operations_forms import AssignmentForm, DriverForm, OperationSessionForm, RouteForm
+from .operational_reporting import session_csv, sessions_for_period
+from .presentation import reporting_period
 from .services import lock_sacco
 
 
@@ -115,12 +119,33 @@ def session_records(fleet_id):
     )
 
 
+def requested_vehicle(request):
+    value = request.GET.get("vehicle")
+    if not value:
+        return None
+    if not value.isascii() or not value.isdecimal() or len(value) > 19 or int(value) > 2**63-1:
+        raise Http404
+    return get_object_or_404(Vehicle, fleet_id=request.user.sacco_id, pk=int(value))
+
+
 @never_cache
 @login_required
 @require_GET
 def daily_operations(request):
-    records = session_records(request.user.sacco_id)
-    return render(request, "fleet/operations.html", {"records": records})
+    fleet_id = request.user.sacco_id
+    period = reporting_period(request.GET)
+    vehicle = requested_vehicle(request)
+    if vehicle:
+        period["filter_vehicle"] = vehicle
+    if period["period_valid"]:
+        selected = sessions_for_period(fleet_id, period)
+        if vehicle:
+            selected = selected.filter(assignment__vehicle=vehicle)
+        if request.GET.get("format") == "csv":
+            return session_csv("daily-operations", selected)
+        records = session_records(fleet_id).filter(pk__in=selected.order_by().values("pk"))
+        period["page_obj"] = Paginator(records, 25).get_page(request.GET.get("page"))
+    return render(request, "fleet/operations.html", period)
 
 
 @never_cache
@@ -156,6 +181,10 @@ def edit_operation_form(request, pk=None):
                 return redirect("operation_detail", pk=session.pk)
     else:
         form = operation_form(request.user, pk)
+        if not pk and (vehicle := requested_vehicle(request)):
+            assignment = form.fields["assignment"].queryset.filter(vehicle=vehicle).first()
+            if assignment:
+                form.initial["assignment"] = assignment.pk
     return render_entry(request, form, "Correct session" if pk else "Record daily operation", "daily_operations",
                         "Choose an assignment and route. Enter dates and times in East Africa Time.")
 

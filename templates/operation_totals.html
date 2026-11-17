@@ -1,0 +1,8 @@
+{% load humanize %}
+<dl class="stats" aria-label="Operation totals for the selected period">
+  <div class="stat"><dt><a href="{{ source_url }}">Total trips</a></dt><dd>{{ trips|intcomma }}</dd></div>
+  <div class="stat"><dt><a href="{{ source_url }}">Recorded distance</a></dt><dd>{{ distance|intcomma }} km</dd></div>
+  <div class="stat"><dt><a href="{{ source_url }}">Reported collections</a></dt><dd>KSh {{ reported|intcomma }}</dd></div>
+</dl>
+{% if not has_sessions %}<p class="range-caption">No operation sessions found for this period.</p>{% endif %}
+<p class="range-caption">Collections are staff-reported and unverified.</p>

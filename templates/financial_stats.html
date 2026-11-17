@@ -1,5 +1,7 @@
 <dl class="stats" aria-label="Selected period totals">
-  {% include 'stat.html' with label='Collections' value=total_in money=True icon='collections' %}
+  {% include 'stat.html' with label='Reported collections' value=total_in money=True icon='collections' %}
   {% include 'stat.html' with label='Expenses' value=total_out money=True icon='expenses' %}
-  {% include 'stat.html' with label='Net profit' value=profit money=True dark=True %}
+  {% include 'stat.html' with label='Reported collections minus recorded expenses' value=difference money=True dark=True %}
 </dl>
+
+<p class="range-caption">Collections are staff-reported and unverified. The difference does not represent audited profit.</p>

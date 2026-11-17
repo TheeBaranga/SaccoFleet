@@ -11,8 +11,9 @@ from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from .presentation import chart_context, reporting_period, money_summary, vehicle_summary
-from .forms import CollectionForm, ExpenseForm, VehicleForm, ServiceForm
+from .forms import ExpenseForm, VehicleForm, ServiceForm
 from .models import Assignment, Collection, Expense, Vehicle, ServiceRecord
+from .operational_reporting import operational_context, operation_totals, session_csv, sessions_for_period
 from .services import lock_sacco, save_service
 from .exports import csv_response
 
@@ -70,13 +71,16 @@ def vehicle_detail(request, pk):
     context.update(service_history=ServiceRecord.objects.filter(expense__vehicle=vehicle).select_related("expense")[:10], **period)
     if period["period_valid"]:
         dates = (period["range_start"], period["range_end"])
-        collections = vehicle.collections.filter(date__range=dates)
+        sessions = sessions_for_period(request.user.sacco_id, period).filter(assignment__vehicle=vehicle)
         expenses = vehicle.expenses.filter(date__range=dates)
-        incoming = collections.aggregate(total=Sum("amount"))["total"] or 0
-        outgoing = expenses.aggregate(total=Sum("amount"))["total"] or 0
-        context.update({"total_in": incoming, "total_out": outgoing, "profit": incoming-outgoing,
-                        "recent_vehicle_collections": collections[:5], "recent_vehicle_expenses": expenses[:5],
-                        **chart_context(request.user, period, vehicle)})
+        incoming = sessions.aggregate(**operation_totals())["reported"]
+        outgoing = expenses.aggregate(total=Sum("amount", default=0))["total"]
+        source_url = reverse("daily_operations", query={
+            "period": "custom", "start": period["range_start"], "end": period["range_end"], "vehicle": vehicle.pk,
+        })
+        context.update(total_in=incoming, total_out=outgoing, difference=incoming-outgoing, source_url=source_url,
+                       recent_vehicle_sessions=sessions[:5], recent_vehicle_expenses=expenses[:5],
+                       **chart_context(request.user, period, vehicle))
     return render(request, "fleet/vehicle_detail.html", context)
 
 
@@ -94,18 +98,6 @@ def edit_vehicle(request, pk):
         return redirect("vehicle_detail", pk=pk)
     return render(request, "fleet/form.html", {"form": form, "heading": f"Edit {registration}", "description": "Update this vehicle’s details.", "button_label": "Save changes", "cancel_url": reverse("vehicle_detail", args=[pk]), "back_label": "Back to vehicle"})
 
-
-@never_cache
-@manager_required
-@require_http_methods(["GET", "POST"])
-def record_collection(request):
-    form = CollectionForm(request.POST if request.method == "POST" else None, owner=request.user, initial={"vehicle": request.GET.get("vehicle")})
-    has_vehicles = Vehicle.objects.filter(fleet_id=request.user.sacco_id).exists()
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Collection recorded.")
-        return redirect("dashboard")
-    return render(request, "fleet/form.html", {"form": form, "heading": "Record collection", "description": "Record a vehicle’s collections in whole Kenyan shillings.", "button_label": "Save collection", "no_vehicles": not has_vehicles, "cancel_url": reverse("dashboard"), "back_label": "Back to dashboard"})
 
 
 def financial_filters(records, request):
@@ -125,14 +117,28 @@ def financial_filters(records, request):
 @manager_required
 @require_http_methods(["GET"])
 def collections(request):
+    period = reporting_period(request.GET)
+    if period["period_valid"]:
+        sessions = sessions_for_period(request.user.sacco_id, period)
+        if request.GET.get("format") == "csv":
+            return session_csv("reported-collections", sessions)
+        period.update(operational_context(request.user, period))
+        period["page_obj"] = Paginator(sessions.select_related("assignment__vehicle", "route"), 20).get_page(request.GET.get("page"))
+    return render(request, "fleet/collections.html", period)
+
+
+@never_cache
+@manager_required
+@require_http_methods(["GET"])
+def legacy_collections(request):
     records = Collection.objects.filter(vehicle__fleet_id=request.user.sacco_id).select_related("vehicle")
     records, query, period = financial_filters(records, request)
     if request.GET.get("format") == "csv":
         rows = ((r.date, r.vehicle.registration, r.vehicle.driver, r.amount) for r in records.iterator())
-        return csv_response("collections", ["Date", "Vehicle", "Driver", "Amount (KSh)"], rows)
+        return csv_response("legacy-collections", ["Date", "Vehicle", "Driver", "Amount (KSh)"], rows)
     summary = money_summary(records, timezone.localdate())
     page = Paginator(records, 20).get_page(request.GET.get("page"))
-    return render(request, "fleet/collections.html", {"page_obj": page, "total": f"{summary['total']:,}", "money": summary, "query": query, "period": period})
+    return render(request, "fleet/legacy_collections.html", {"page_obj": page, "total": f"{summary['total']:,}", "money": summary, "query": query, "period": period})
 
 
 @never_cache
@@ -166,29 +172,6 @@ def delete_vehicle(request, pk):
     })
 
 
-@never_cache
-@manager_required
-@require_http_methods(["GET", "POST"])
-def edit_collection(request, pk):
-    collection = get_object_or_404(Collection, pk=pk, vehicle__fleet_id=request.user.sacco_id)
-    form = CollectionForm(request.POST if request.method == "POST" else None, instance=collection, owner=request.user)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Collection updated.")
-        return redirect("collections")
-    return render(request, "fleet/form.html", {"form": form, "heading": "Edit collection", "description": "Correct this collection.", "button_label": "Save changes", "cancel_url": reverse("collections"), "back_label": "Back to collections"})
-
-
-@never_cache
-@manager_required
-@require_http_methods(["GET", "POST"])
-def delete_collection(request, pk):
-    collection = get_object_or_404(Collection, pk=pk, vehicle__fleet_id=request.user.sacco_id)
-    if request.method == "POST":
-        collection.delete()
-        messages.success(request, "Collection deleted.")
-        return redirect("collections")
-    return render(request, "fleet/confirm_delete.html", {"heading": "Delete this collection?", "warning": f"KSh {collection.amount:,} for {collection.vehicle} on {collection.date:%d %b %Y}.", "cancel_url": reverse("collections")})
 
 
 @never_cache
@@ -266,23 +249,29 @@ def reports(request):
     period = reporting_period(request.GET)
     if not period["period_valid"]:
         return render(request, "fleet/reports.html", period)
-    dates = (period["range_start"], period["range_end"])
-    collections = Collection.objects.filter(vehicle__fleet_id=request.user.sacco_id, date__range=dates)
-    expenses = Expense.objects.filter(vehicle__fleet_id=request.user.sacco_id, date__range=dates)
-    per_in = dict(collections.order_by().values_list("vehicle").annotate(total=Sum("amount")))
-    per_out = dict(expenses.order_by().values_list("vehicle").annotate(total=Sum("amount")))
-    rows = []
-    for vehicle in Vehicle.objects.filter(fleet_id=request.user.sacco_id):
-        collected, spent = per_in.get(vehicle.pk, 0), per_out.get(vehicle.pk, 0)
-        rows.append({"vehicle": vehicle, "collected": collected, "spent": spent, "profit": collected-spent})
-    rows.sort(key=lambda row: row["profit"], reverse=True)
-    total_in, total_out = sum(per_in.values()), sum(per_out.values())
+    fleet_id = request.user.sacco_id
+    sessions = sessions_for_period(fleet_id, period)
     if request.GET.get("format") == "csv":
-        data = ((period["range_start"], period["range_end"], row["vehicle"].registration,
-                 row["collected"], row["spent"], row["profit"]) for row in rows)
-        return csv_response("fleet-report", ["From", "To", "Vehicle", "Collections (KSh)", "Expenses (KSh)", "Profit (KSh)"], data)
-    return render(request, "fleet/reports.html", {**period, **chart_context(request.user, period),
-        "rows": rows, "total_in": total_in, "total_out": total_out, "profit": total_in-total_out})
+        return session_csv("fleet-report-sessions", sessions)
+    expenses = Expense.objects.filter(vehicle__fleet_id=fleet_id, date__range=(period["range_start"], period["range_end"]))
+    per_out = dict(expenses.order_by().values_list("vehicle").annotate(total=Sum("amount")))
+    per_vehicle = {
+        row["assignment__vehicle_id"]: row
+        for row in sessions.order_by().values("assignment__vehicle_id").annotate(**operation_totals())
+    }
+    rows = []
+    for vehicle in Vehicle.objects.filter(fleet_id=fleet_id, pk__in=set(per_vehicle) | set(per_out)):
+        totals = per_vehicle.get(vehicle.pk, {"trips": 0, "distance": 0, "reported": 0})
+        spent = per_out.get(vehicle.pk, 0)
+        rows.append({"vehicle": vehicle, **totals, "spent": spent, "difference": totals["reported"]-spent,
+                     "source_url": reverse("daily_operations", query={
+                         "period": "custom", "start": period["range_start"], "end": period["range_end"], "vehicle": vehicle.pk,
+                     })})
+    rows.sort(key=lambda row: row["difference"], reverse=True)
+    operational = operational_context(request.user, period)
+    total_out = sum(per_out.values())
+    return render(request, "fleet/reports.html", {**period, **operational, **chart_context(request.user, period),
+        "rows": rows, "total_out": total_out, "difference": operational["reported"]-total_out})
 
 
 @never_cache
