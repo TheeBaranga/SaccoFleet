@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from fleet.models import Expense, Vehicle
 from fleet.operational_reporting import fleet_activity, operational_context, session_csv, sessions_for_period
-from fleet.presentation import chart_context, reporting_period, vehicle_summary
+from fleet.presentation import chart_context, reporting_period, vehicle_summary, vehicles_with_current_driver
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
@@ -23,7 +23,7 @@ def home(request):
 def dashboard(request):
     today = timezone.localdate()
     fleet_id = request.user.sacco_id
-    vehicles = Vehicle.objects.filter(fleet_id=fleet_id)
+    vehicles = vehicles_with_current_driver(fleet_id)
     summary = vehicle_summary(request.user)
     context = {"today": today, "vehicles": vehicles[:5], "summary": summary,
                "total_vehicles": summary["total"], "active_vehicles": summary["active"],

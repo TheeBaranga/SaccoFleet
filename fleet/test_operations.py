@@ -178,3 +178,27 @@ class OperationsTests(TestCase):
         for endpoint in ("add_drivers", "add_routes", "add_assignment"):
             self.assertEqual(self.client.post(reverse(endpoint), {}).status_code, 403)
         self.assertEqual(OperationSession.objects.count(), 1)
+
+    def test_current_assignment_drives_vehicle_list_dashboard_and_search(self):
+        from unittest.mock import patch
+        self.vehicle.driver = "Legacy driver"
+        self.vehicle.save(update_fields=["driver"])
+        with patch("django.utils.timezone.now", return_value=time_at(8)):
+            self.assertContains(self.client.get(reverse("vehicles")), self.driver.name)
+            self.assertContains(self.client.get(reverse("dashboard")), self.driver.name)
+            response = self.client.get(reverse("vehicles"), {"q": self.driver.name})
+            self.assertContains(response, self.vehicle.registration)
+            self.assertNotContains(response, self.foreign_vehicle.registration)
+        with patch("django.utils.timezone.now", return_value=time_at(17)):
+            response = self.client.get(reverse("vehicles"), {"q": self.driver.name})
+            self.assertNotContains(response, self.vehicle.registration)
+            self.assertContains(self.client.get(reverse("vehicles")), "Legacy driver")
+
+    def test_current_assignment_list_query_is_bounded_and_sacco_scoped(self):
+        from unittest.mock import patch
+        from .presentation import vehicles_with_current_driver
+        with patch("django.utils.timezone.now", return_value=time_at(8)), self.assertNumQueries(1):
+            records = list(vehicles_with_current_driver(self.manager.sacco_id))
+            self.assertEqual({record.pk for record in records}, {self.vehicle.pk, self.other_vehicle.pk})
+            current = next(record for record in records if record.pk == self.vehicle.pk)
+            self.assertEqual(current.assigned_driver_name, self.driver.name)

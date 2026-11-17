@@ -1,8 +1,22 @@
 """Shared, owner-scoped summaries for dashboard and finance pages."""
 from datetime import timedelta
-from django.db.models import Count, F, Q, Sum
-from .models import Expense, Vehicle
+from django.db.models import Count, F, OuterRef, Q, Subquery, Sum
+from django.db.models.functions import Coalesce
+from django.utils import timezone
+
+from .models import Assignment, Expense, Vehicle
 from .operational_reporting import NAIROBI, sessions_for_period
+
+
+
+def vehicles_with_current_driver(fleet_id):
+    now = timezone.now()
+    current = Assignment.objects.filter(
+        fleet_id=fleet_id, vehicle_id=OuterRef("pk"), start__lte=now,
+    ).filter(Q(end__isnull=True) | Q(end__gt=now)).order_by("-start", "-pk")
+    return Vehicle.objects.filter(fleet_id=fleet_id).annotate(
+        assigned_driver_name=Coalesce(Subquery(current.values("driver__name")[:1]), F("driver")),
+    )
 
 
 def vehicle_summary(owner):

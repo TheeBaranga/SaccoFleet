@@ -33,3 +33,7 @@ Found 96 test(s).
 System check identified no issues (0 silenced).
 Removed 1 expired login counters.
 ```
+
+## Rehearsal follow-up
+
+On 18 November 2026, the scripted HTTP demo rehearsal and restored-app checks passed. The driver display/search correction adds `test_current_assignment_drives_vehicle_list_dashboard_and_search` and `test_current_assignment_list_query_is_bounded_and_sacco_scoped`. The current full suite passed 98 tests. See [rehearsal results](demo_rehearsal_results.md) and [actual test output](demo-rehearsal-test-output.txt). The earlier 96-test output above records the Phase 4 run. Firefox startup still failed before page load, so Firefox compatibility and participant usability results remain pending.

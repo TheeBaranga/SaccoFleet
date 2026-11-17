@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
-from .presentation import chart_context, reporting_period, money_summary, vehicle_summary
+from .presentation import chart_context, reporting_period, money_summary, vehicle_summary, vehicles_with_current_driver
 from .forms import ExpenseForm, VehicleForm, ServiceForm
 from .models import Assignment, Collection, Expense, Vehicle, ServiceRecord
 from .operational_reporting import operational_context, operation_totals, session_csv, sessions_for_period
@@ -23,9 +23,9 @@ from .exports import csv_response
 @require_http_methods(["GET"])
 def vehicles(request):
     query = request.GET.get("q", "").strip()[:100]
-    records = Vehicle.objects.filter(fleet_id=request.user.sacco_id)
+    records = vehicles_with_current_driver(request.user.sacco_id)
     if query:
-        records = records.filter(Q(registration__icontains="".join(query.split())) | Q(make__icontains=query) | Q(model__icontains=query) | Q(driver__icontains=query) | Q(route__icontains=query))
+        records = records.filter(Q(registration__icontains="".join(query.split())) | Q(make__icontains=query) | Q(model__icontains=query) | Q(assigned_driver_name__icontains=query) | Q(route__icontains=query))
     status = request.GET.get("status", "")
     if status in Vehicle.Status.values:
         records = records.filter(status=status, is_active=True)

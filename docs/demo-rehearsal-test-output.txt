@@ -1,0 +1,13 @@
+Creating test database for alias 'default'...
+.Not Found: /demo-inbox/
+Not Found: /demo-inbox/
+Not Found: /demo-inbox/
+.................................................................................................
+----------------------------------------------------------------------
+Ran 98 tests in 7.192s
+
+OK
+Destroying test database for alias 'default'...
+Found 98 test(s).
+System check identified no issues (0 silenced).
+Removed 1 expired login counters.

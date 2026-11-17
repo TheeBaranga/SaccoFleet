@@ -4,7 +4,7 @@
     <thead><tr><th scope="col">Vehicle</th><th scope="col">Capacity</th><th scope="col">Driver</th><th scope="col">Route</th><th scope="col">Status</th></tr></thead>
     <tbody>
       {% for vehicle in vehicles %}
-      <tr><th scope="row"><a href="{% url 'vehicle_detail' vehicle.pk %}">{{ vehicle.registration }}</a><small class="cell-subtitle">{{ vehicle.make }} {{ vehicle.model }}</small></th><td>{{ vehicle.capacity }} seats</td><td>{{ vehicle.driver|default:"Unassigned" }}</td><td>{{ vehicle.route|default:"Unassigned" }}</td><td><span class="badge badge-{{ vehicle.status }}">{% if vehicle.is_active %}{{ vehicle.get_status_display }}{% else %}Deactivated{% endif %}</span></td></tr>
+      <tr><th scope="row"><a href="{% url 'vehicle_detail' vehicle.pk %}">{{ vehicle.registration }}</a><small class="cell-subtitle">{{ vehicle.make }} {{ vehicle.model }}</small></th><td>{{ vehicle.capacity }} seats</td><td>{{ vehicle.assigned_driver_name|default:"Unassigned" }}</td><td>{{ vehicle.route|default:"Unassigned" }}</td><td><span class="badge badge-{{ vehicle.status }}">{% if vehicle.is_active %}{{ vehicle.get_status_display }}{% else %}Deactivated{% endif %}</span></td></tr>
       {% empty %}
       <tr><td colspan="5" class="empty-state">
         {% if query %}<h3>No vehicles found</h3><p>Try another registration, driver or route.</p><a href="{% url 'vehicles' %}">Clear search</a>
