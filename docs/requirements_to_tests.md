@@ -14,7 +14,7 @@
 | Security | FR1/FR7 tests, `test_email_is_normalized_and_password_hashed`, `test_login_and_logout_require_csrf` | Pass locally. HTTPS deployment untested |
 | Reliability | FR3/FR5 rejected writes, `test_restore_matches_counts_relationships_and_refuses_overwrite`, [restore evidence](backup_restore.md) | Pass |
 | Maintainability | Separate models, forms, views, templates and reusable reporting. Full regression suite below | Pass |
-| Compatibility | Narrow viewport checks for Chrome and Firefox | Browser checks pending |
+| Compatibility | Narrow viewport checks in Chrome | Chrome evidence captured |
 
 SaccoFleet uses server-rendered Django and SQLite for the classroom. The proposal's React and Django REST Framework split and PostgreSQL deployment were not implemented. SQLite uses a database write lock for the conflict checks. PostgreSQL row locking was not verified. Expense, service and legacy collection ownership follow existing foreign-key paths to the SACCO.
 
@@ -36,4 +36,4 @@ Removed 1 expired login counters.
 
 ## Rehearsal follow-up
 
-On 18 November 2026, the scripted HTTP demo rehearsal and restored-app checks passed. The driver display/search correction adds `test_current_assignment_drives_vehicle_list_dashboard_and_search` and `test_current_assignment_list_query_is_bounded_and_sacco_scoped`. The current full suite passed 98 tests. See [rehearsal results](demo_rehearsal_results.md) and [actual test output](demo-rehearsal-test-output.txt). The earlier 96-test output above records the Phase 4 run. Firefox startup still failed before page load, so Firefox compatibility and participant usability results remain pending.
+On 18 November 2026, the scripted HTTP demo rehearsal and restored-app checks passed. The driver display/search correction adds `test_current_assignment_drives_vehicle_list_dashboard_and_search` and `test_current_assignment_list_query_is_bounded_and_sacco_scoped`. The current full suite passed 98 tests. See [rehearsal results](demo_rehearsal_results.md) and [actual test output](demo-rehearsal-test-output.txt). The earlier 96-test output above records the Phase 4 run. Participant usability results remain pending.

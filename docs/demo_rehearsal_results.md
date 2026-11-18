@@ -21,10 +21,6 @@ The rehearsal exposed a vehicle-list mismatch. A saved assignment could still ap
 
 The full regression suite passed 98 tests after this correction.
 
-## Firefox status
-
-The isolated Playwright Firefox test build aborted during application startup on macOS before loading any app page. A native launch also failed. Firefox mobile compatibility remains unverified. Existing Chrome mobile evidence is retained. A Firefox failure to launch is recorded separately from application compatibility.
-
 ## Data preservation
 
 The original database SHA-256 before and after the rehearsal was identical. All entry, correction and restore operations used the fictional copy. No production accounts or operational records were used.
